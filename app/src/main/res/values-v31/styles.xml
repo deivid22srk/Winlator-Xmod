@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material You Light Theme -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/md3_primary_light</item>
+        <item name="colorPrimaryDark">@color/md3_primary_dark</item>
+        <item name="colorAccent">@color/md3_primary_light</item>
+        
+        <!-- Window colors -->
+        <item name="android:windowBackground">@color/md3_surface_light</item>
+        <item name="android:colorBackground">@color/md3_background_light</item>
+        
+        <!-- Enable dynamic colors -->
+        <item name="android:isLightTheme">true</item>
+    </style>
+
+    <!-- Material You Dark Theme -->
+    <style name="AppTheme.Dark" parent="Theme.AppCompat.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/md3_primary_dark</item>
+        <item name="colorPrimaryDark">@color/md3_on_primary_container_dark</item>
+        <item name="colorAccent">@color/md3_primary_dark</item>
+        
+        <!-- Window colors -->
+        <item name="android:windowBackground">@color/md3_surface_dark</item>
+        <item name="android:colorBackground">@color/md3_background_dark</item>
+        
+        <!-- Enable dark theme -->
+        <item name="android:isLightTheme">false</item>
+    </style>
+
+    <!-- Material You Fullscreen Light -->
+    <style name="AppThemeFullscreen" parent="@style/AppTheme">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@color/md3_surface_light</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+
+    <!-- Material You Fullscreen Dark -->
+    <style name="AppThemeFullscreen.Dark" parent="@style/AppTheme.Dark">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowBackground">@color/md3_surface_dark</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

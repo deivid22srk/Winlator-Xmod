@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Material You Styles for Android < 12 -->
+    
+    <!-- Base Material You Light Theme -->
+    <style name="AppTheme.MaterialYou" parent="Theme.Material3.Light.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/md3_primary_light</item>
+        <item name="colorOnPrimary">@color/md3_on_primary_light</item>
+        <item name="colorPrimaryContainer">@color/md3_primary_container_light</item>
+        <item name="colorOnPrimaryContainer">@color/md3_on_primary_container_light</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/md3_secondary_light</item>
+        <item name="colorOnSecondary">@color/md3_on_secondary_light</item>
+        <item name="colorSecondaryContainer">@color/md3_secondary_container_light</item>
+        <item name="colorOnSecondaryContainer">@color/md3_on_secondary_container_light</item>
+        
+        <!-- Tertiary colors -->
+        <item name="colorTertiary">@color/md3_tertiary_light</item>
+        <item name="colorOnTertiary">@color/md3_on_tertiary_light</item>
+        <item name="colorTertiaryContainer">@color/md3_tertiary_container_light</item>
+        <item name="colorOnTertiaryContainer">@color/md3_on_tertiary_container_light</item>
+        
+        <!-- Error colors -->
+        <item name="colorError">@color/md3_error_light</item>
+        <item name="colorOnError">@color/md3_on_error_light</item>
+        <item name="colorErrorContainer">@color/md3_error_container_light</item>
+        <item name="colorOnErrorContainer">@color/md3_on_error_container_light</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/md3_surface_light</item>
+        <item name="colorOnSurface">@color/md3_on_surface_light</item>
+        <item name="colorSurfaceVariant">@color/md3_surface_variant_light</item>
+        <item name="colorOnSurfaceVariant">@color/md3_on_surface_variant_light</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/md3_background_light</item>
+        <item name="colorOnBackground">@color/md3_on_background_light</item>
+        
+        <!-- Window background -->
+        <item name="android:windowBackground">@color/md3_surface_light</item>
+        
+        <!-- Legacy compatibility colors -->
+        <item name="colorAccent">@color/md3_primary_light</item>
+        <item name="colorPrimaryDark">@color/md3_primary_dark</item>
+        
+        <!-- Component styles -->
+        <item name="android:textViewStyle">@style/TextView.MaterialYou</item>
+        <item name="android:checkboxStyle">@style/CheckBox.MaterialYou</item>
+        <item name="android:listPopupWindowStyle">@style/ListPopupWindow.MaterialYou</item>
+        <item name="listPopupWindowStyle">@style/ListPopupWindow.MaterialYou</item>
+        <item name="android:popupWindowStyle">@style/PopupWindow.MaterialYou</item>
+        <item name="popupWindowStyle">@style/PopupWindow.MaterialYou</item>
+        <item name="android:popupMenuStyle">@style/PopupMenu.MaterialYou</item>
+        <item name="popupMenuStyle">@style/PopupMenu.MaterialYou</item>
+    </style>
+
+    <!-- Base Material You Dark Theme -->
+    <style name="AppTheme.MaterialYou.Dark" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/md3_primary_dark</item>
+        <item name="colorOnPrimary">@color/md3_on_primary_dark</item>
+        <item name="colorPrimaryContainer">@color/md3_primary_container_dark</item>
+        <item name="colorOnPrimaryContainer">@color/md3_on_primary_container_dark</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/md3_secondary_dark</item>
+        <item name="colorOnSecondary">@color/md3_on_secondary_dark</item>
+        <item name="colorSecondaryContainer">@color/md3_secondary_container_dark</item>
+        <item name="colorOnSecondaryContainer">@color/md3_on_secondary_container_dark</item>
+        
+        <!-- Tertiary colors -->
+        <item name="colorTertiary">@color/md3_tertiary_dark</item>
+        <item name="colorOnTertiary">@color/md3_on_tertiary_dark</item>
+        <item name="colorTertiaryContainer">@color/md3_tertiary_container_dark</item>
+        <item name="colorOnTertiaryContainer">@color/md3_on_tertiary_container_dark</item>
+        
+        <!-- Error colors -->
+        <item name="colorError">@color/md3_error_dark</item>
+        <item name="colorOnError">@color/md3_on_error_dark</item>
+        <item name="colorErrorContainer">@color/md3_error_container_dark</item>
+        <item name="colorOnErrorContainer">@color/md3_on_error_container_dark</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/md3_surface_dark</item>
+        <item name="colorOnSurface">@color/md3_on_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/md3_surface_variant_dark</item>
+        <item name="colorOnSurfaceVariant">@color/md3_on_surface_variant_dark</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/md3_background_dark</item>
+        <item name="colorOnBackground">@color/md3_on_background_dark</item>
+        
+        <!-- Window background -->
+        <item name="android:windowBackground">@color/md3_surface_dark</item>
+        
+        <!-- Legacy compatibility colors -->
+        <item name="colorAccent">@color/md3_primary_dark</item>
+        <item name="colorPrimaryDark">@color/md3_on_primary_container_dark</item>
+        
+        <!-- Component styles -->
+        <item name="android:textViewStyle">@style/TextView.MaterialYou.Dark</item>
+        <item name="android:checkboxStyle">@style/CheckBox.MaterialYou.Dark</item>
+        <item name="android:listPopupWindowStyle">@style/ListPopupWindow.MaterialYou.Dark</item>
+        <item name="listPopupWindowStyle">@style/ListPopupWindow.MaterialYou.Dark</item>
+        <item name="android:popupWindowStyle">@style/PopupWindow.MaterialYou.Dark</item>
+        <item name="popupWindowStyle">@style/PopupWindow.MaterialYou.Dark</item>
+        <item name="android:popupMenuStyle">@style/PopupMenu.MaterialYou.Dark</item>
+        <item name="popupMenuStyle">@style/PopupMenu.MaterialYou.Dark</item>
+    </style>
+
+    <!-- Material You Component Styles for Android < 12 -->
+    
+    <!-- TextView Styles -->
+    <style name="TextView.MaterialYou" parent="Widget.AppCompat.TextView">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/md3_on_surface_light</item>
+    </style>
+
+    <style name="TextView.MaterialYou.Dark" parent="Widget.AppCompat.TextView">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/md3_on_surface_dark</item>
+    </style>
+
+    <!-- CheckBox Styles -->
+    <style name="CheckBox.MaterialYou" parent="Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/md3_on_surface_light</item>
+        <item name="colorAccent">@color/md3_primary_light</item>
+    </style>
+
+    <style name="CheckBox.MaterialYou.Dark" parent="Widget.AppCompat.CompoundButton.CheckBox">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/md3_on_surface_dark</item>
+        <item name="colorAccent">@color/md3_primary_dark</item>
+    </style>
+
+    <!-- Button Styles -->
+    <style name="ButtonMaterialYou.Light" parent="Widget.AppCompat.Button">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:paddingLeft">24dp</item>
+        <item name="android:paddingRight">24dp</item>
+        <item name="android:backgroundTint">@color/md3_primary_light</item>
+        <item name="android:textColor">@color/md3_on_primary_light</item>
+    </style>
+
+    <style name="ButtonMaterialYou.Dark" parent="Widget.AppCompat.Button">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:paddingLeft">24dp</item>
+        <item name="android:paddingRight">24dp</item>
+        <item name="android:backgroundTint">@color/md3_primary_dark</item>
+        <item name="android:textColor">@color/md3_on_primary_dark</item>
+    </style>
+
+    <!-- EditText Styles -->
+    <style name="EditText.MaterialYou" parent="Widget.AppCompat.EditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:textColor">@color/md3_on_surface_light</item>
+        <item name="android:textColorHint">@color/md3_on_surface_variant_light</item>
+        <item name="colorAccent">@color/md3_primary_light</item>
+    </style>
+
+    <style name="EditText.MaterialYou.Dark" parent="Widget.AppCompat.EditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorHint">#BBBBBB</item>
+        <item name="android:background">@drawable/edit_text_dark_fixed</item>
+        <item name="colorAccent">@color/md3_primary_dark</item>
+    </style>
+
+    <!-- Popup Styles -->
+    <style name="ListPopupWindow.MaterialYou" parent="Widget.AppCompat.ListPopupWindow">
+        <item name="android:popupBackground">@color/md3_surface_container_light</item>
+        <item name="android:dropDownHorizontalOffset">-4dp</item>
+    </style>
+
+    <style name="ListPopupWindow.MaterialYou.Dark" parent="Widget.AppCompat.ListPopupWindow">
+        <item name="android:popupBackground">@color/md3_surface_container_dark</item>
+        <item name="android:dropDownHorizontalOffset">-4dp</item>
+    </style>
+
+    <style name="PopupWindow.MaterialYou" parent="android:Widget.PopupWindow">
+        <item name="android:popupBackground">@color/md3_surface_container_light</item>
+        <item name="android:dropDownHorizontalOffset">-4dp</item>
+    </style>
+
+    <style name="PopupWindow.MaterialYou.Dark" parent="android:Widget.PopupWindow">
+        <item name="android:popupBackground">@color/md3_surface_container_dark</item>
+        <item name="android:dropDownHorizontalOffset">-4dp</item>
+    </style>
+
+    <style name="PopupMenu.MaterialYou" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@color/md3_surface_container_light</item>
+    </style>
+
+    <style name="PopupMenu.MaterialYou.Dark" parent="Widget.AppCompat.PopupMenu">
+        <item name="android:popupBackground">@color/md3_surface_container_dark</item>
+    </style>
+
+    <!-- Dialog Styles -->
+    <style name="ContentDialog.MaterialYou" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/md3_surface_container_light</item>
+        <item name="android:backgroundDimAmount">0.6</item>
+    </style>
+
+    <style name="ContentDialog.MaterialYou.Dark" parent="Theme.AppCompat.Dialog">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/md3_surface_container_dark</item>
+        <item name="android:backgroundDimAmount">0.6</item>
+    </style>
+
+    <!-- File Picker Dialog Style -->
+    <style name="DialogMaterialYou" parent="Theme.Material3.Light.Dialog">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/md3_primary_light</item>
+        <item name="colorOnPrimary">@color/md3_on_primary_light</item>
+        <item name="colorPrimaryContainer">@color/md3_primary_container_light</item>
+        <item name="colorOnPrimaryContainer">@color/md3_on_primary_container_light</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/md3_secondary_light</item>
+        <item name="colorOnSecondary">@color/md3_on_secondary_light</item>
+        <item name="colorSecondaryContainer">@color/md3_secondary_container_light</item>
+        <item name="colorOnSecondaryContainer">@color/md3_on_secondary_container_light</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/md3_surface_light</item>
+        <item name="colorOnSurface">@color/md3_on_surface_light</item>
+        <item name="colorSurfaceVariant">@color/md3_surface_variant_light</item>
+        <item name="colorOnSurfaceVariant">@color/md3_on_surface_variant_light</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/md3_background_light</item>
+        <item name="colorOnBackground">@color/md3_on_background_light</item>
+        
+        <!-- Additional surface colors -->
+        <item name="colorSurfaceContainer">@color/md3_surface_container_light</item>
+        <item name="colorOutlineVariant">@color/md3_outline_variant_light</item>
+        
+        <!-- Window properties -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.6</item>
+    </style>
+
+    <style name="DialogMaterialYou.Dark" parent="Theme.Material3.Dark.Dialog">
+        <!-- Primary colors -->
+        <item name="colorPrimary">@color/md3_primary_dark</item>
+        <item name="colorOnPrimary">@color/md3_on_primary_dark</item>
+        <item name="colorPrimaryContainer">@color/md3_primary_container_dark</item>
+        <item name="colorOnPrimaryContainer">@color/md3_on_primary_container_dark</item>
+        
+        <!-- Secondary colors -->
+        <item name="colorSecondary">@color/md3_secondary_dark</item>
+        <item name="colorOnSecondary">@color/md3_on_secondary_dark</item>
+        <item name="colorSecondaryContainer">@color/md3_secondary_container_dark</item>
+        <item name="colorOnSecondaryContainer">@color/md3_on_secondary_container_dark</item>
+        
+        <!-- Surface colors -->
+        <item name="colorSurface">@color/md3_surface_dark</item>
+        <item name="colorOnSurface">@color/md3_on_surface_dark</item>
+        <item name="colorSurfaceVariant">@color/md3_surface_variant_dark</item>
+        <item name="colorOnSurfaceVariant">@color/md3_on_surface_variant_dark</item>
+        
+        <!-- Background colors -->
+        <item name="android:colorBackground">@color/md3_background_dark</item>
+        <item name="colorOnBackground">@color/md3_on_background_dark</item>
+        
+        <!-- Additional surface colors -->
+        <item name="colorSurfaceContainer">@color/md3_surface_container_dark</item>
+        <item name="colorOutlineVariant">@color/md3_outline_variant_dark</item>
+        
+        <!-- Window properties -->
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.6</item>
+    </style>
+
+    <!-- ComboBox Material You -->
+    <style name="ComboBox.MaterialYou" parent="Widget.AppCompat.Spinner">
+        <item name="android:layout_width">192dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">36dp</item>
+        <item name="android:textColor">@color/md3_on_surface_light</item>
+        <item name="android:popupBackground">@color/md3_surface_container_light</item>
+    </style>
+
+    <style name="ComboBox.MaterialYou.Dark" parent="Widget.AppCompat.Spinner">
+        <item name="android:layout_width">192dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">36dp</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:background">@drawable/combo_box_dark_fixed</item>
+        <item name="android:popupBackground">@drawable/content_dialog_background_material_you_dark</item>
+    </style>
+</resources>

@@ -1,0 +1,254 @@
+# CMakeLists.txt Otimizado para Performance - Winlator
+cmake_minimum_required(VERSION 3.22.1)
+
+project(Winlator)
+
+# Configurações de Performance
+option(ENABLE_PERFORMANCE_OPTIMIZATIONS "Enable performance optimizations" ON)
+option(ENABLE_VULKAN_CACHE "Enable Vulkan instance caching" ON)
+option(ENABLE_JNI_CACHE "Enable JNI method ID caching" ON)
+option(ENABLE_MEMORY_POOLS "Enable memory pooling" ON)
+option(ENABLE_PROFILING "Enable performance profiling" OFF)
+
+# Detectar arquitetura do processador
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64")
+    set(TARGET_ARCH "arm64")
+    set(ARCH_FLAGS "-march=armv8-a")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm")
+    set(TARGET_ARCH "arm32") 
+    set(ARCH_FLAGS "-march=armv7-a -mfpu=neon")
+else()
+    set(TARGET_ARCH "unknown")
+    set(ARCH_FLAGS "")
+endif()
+
+message(STATUS "Target Architecture: ${TARGET_ARCH}")
+
+# Flags de Compilação Otimizadas
+set(OPTIMIZATION_FLAGS "")
+set(WARNING_FLAGS "-Wall -Wextra -Wno-unused-function")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    # Otimizações agressivas para Release
+    set(OPTIMIZATION_FLAGS "-O3 -flto -ffast-math -funroll-loops")
+    
+    # Otimizações específicas por arquitetura
+    if(TARGET_ARCH STREQUAL "arm64")
+        set(OPTIMIZATION_FLAGS "${OPTIMIZATION_FLAGS} -mcpu=cortex-a78 -mtune=cortex-a78")
+    elseif(TARGET_ARCH STREQUAL "arm32")
+        set(OPTIMIZATION_FLAGS "${OPTIMIZATION_FLAGS} -mcpu=cortex-a15 -mtune=cortex-a15")
+    endif()
+    
+    # Branch prediction optimization
+    set(OPTIMIZATION_FLAGS "${OPTIMIZATION_FLAGS} -fprofile-use=auto -fbranch-probabilities")
+    
+elseif(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+    # Otimizações moderadas mantendo debug info
+    set(OPTIMIZATION_FLAGS "-O2 -g -DNDEBUG")
+    
+elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    # Debug com algumas otimizações básicas
+    set(OPTIMIZATION_FLAGS "-Og -g -DDEBUG")
+    set(WARNING_FLAGS "${WARNING_FLAGS} -Wimplicit-function-declaration")
+    
+else()
+    # Padrão
+    set(OPTIMIZATION_FLAGS "-O2")
+endif()
+
+# Flags específicas de C/C++
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OPTIMIZATION_FLAGS} ${ARCH_FLAGS} ${WARNING_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPTIMIZATION_FLAGS} ${ARCH_FLAGS} ${WARNING_FLAGS} -std=c++17")
+
+# Configurações de Linking
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -Wl,--strip-all")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--gc-sections")
+
+# Defines condicionais baseadas nas opções
+if(ENABLE_PERFORMANCE_OPTIMIZATIONS)
+    add_definitions(-DENABLE_PERFORMANCE_OPTIMIZATIONS=1)
+endif()
+
+if(ENABLE_VULKAN_CACHE)
+    add_definitions(-DENABLE_VULKAN_CACHE=1)
+endif()
+
+if(ENABLE_JNI_CACHE)
+    add_definitions(-DENABLE_JNI_CACHE=1)
+endif()
+
+if(ENABLE_MEMORY_POOLS)
+    add_definitions(-DENABLE_MEMORY_POOLS=1)
+endif()
+
+if(ENABLE_PROFILING)
+    add_definitions(-DENABLE_PROFILING=1)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+endif()
+
+# Definir tamanhos de buffer otimizados por dispositivo
+add_definitions(
+    -DMAX_EVENTS_OPTIMAL=32
+    -DMAX_FDS_OPTIMAL=256
+    -DIO_BUFFER_SIZE_OPTIMAL=8192
+    -DVULKAN_CACHE_SIZE=16
+    -DJNI_CACHE_SIZE=32
+)
+
+# Adicionar subdiretorios
+add_subdirectory(OpenXR-SDK)
+add_subdirectory(patchelf)
+
+# Verificar se adrenotools existe
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/adrenotools/lib/linkernsbypass")
+    add_subdirectory(adrenotools/lib/linkernsbypass)
+    set(ADRENOTOOLS_AVAILABLE ON)
+else()
+    message(WARNING "AdrenoTools not found - using system Vulkan drivers only")
+    set(ADRENOTOOLS_AVAILABLE OFF)
+endif()
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/adrenotools/src/hook")
+    add_subdirectory(adrenotools/src/hook)
+endif()
+
+# Criar biblioteca principal otimizada
+set(WINLATOR_SOURCES
+    xr/engine.c
+    xr/framebuffer.c
+    xr/input.c
+    xr/main.c
+    xr/math.c
+    xr/renderer.c
+    winlator/drawable.c
+    winlator/gpu_image.c
+    winlator/sysvshared_memory.c
+    winlator/xconnector_epoll.c
+    winlator/alsa_client.c
+    winlator/patchelf_wrapper.cpp
+    winlator/vulkan.cpp
+)
+
+# Adicionar fontes de otimização se disponíveis
+if(ENABLE_PERFORMANCE_OPTIMIZATIONS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/winlator/vulkan_optimized.cpp")
+    list(APPEND WINLATOR_SOURCES winlator/vulkan_optimized.cpp)
+endif()
+
+if(ENABLE_PERFORMANCE_OPTIMIZATIONS AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/winlator/xconnector_optimized.c")
+    list(APPEND WINLATOR_SOURCES winlator/xconnector_optimized.c)
+endif()
+
+# Adicionar fontes do AdrenoTools se disponível
+if(ADRENOTOOLS_AVAILABLE)
+    list(APPEND WINLATOR_SOURCES
+        adrenotools/src/bcenabler.cpp
+        adrenotools/src/driver.cpp
+    )
+endif()
+
+# Criar biblioteca compartilhada
+add_library(winlator SHARED ${WINLATOR_SOURCES})
+
+# Configurar includes
+target_include_directories(winlator PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/winlator
+)
+
+if(ADRENOTOOLS_AVAILABLE)
+    target_include_directories(winlator PUBLIC 
+        adrenotools/include
+        adrenotools
+    )
+endif()
+
+# Flags específicas da biblioteca
+target_compile_options(winlator PRIVATE 
+    -fvisibility=hidden
+    -ffunction-sections
+    -fdata-sections
+)
+
+# Configurar linking
+if(ADRENOTOOLS_AVAILABLE)
+    target_link_options(winlator PRIVATE 
+        "-Wl,-s,--exclude-libs,liblinkernsbypass.a"
+    )
+endif()
+
+# Linkar bibliotecas necessárias
+set(WINLATOR_LIBS
+    log
+    android
+    jnigraphics
+    openxr_loader
+    aaudio
+    EGL
+    GLESv2
+    GLESv3
+)
+
+if(ADRENOTOOLS_AVAILABLE)
+    list(APPEND WINLATOR_LIBS linkernsbypass)
+endif()
+
+target_link_libraries(winlator ${WINLATOR_LIBS})
+
+# Configuração específica para profiling
+if(ENABLE_PROFILING)
+    find_library(LIBUNWIND_LIBRARY unwind)
+    if(LIBUNWIND_LIBRARY)
+        target_link_libraries(winlator ${LIBUNWIND_LIBRARY})
+    endif()
+endif()
+
+# Target para limpeza de performance profiling
+if(ENABLE_PROFILING)
+    add_custom_target(clean-profiling
+        COMMAND rm -f gmon.out *.gcda *.gcno
+        COMMENT "Cleaning profiling data"
+    )
+endif()
+
+# Target para análise estática
+find_program(CLANG_TIDY clang-tidy)
+if(CLANG_TIDY)
+    add_custom_target(static-analysis
+        COMMAND ${CLANG_TIDY} ${WINLATOR_SOURCES} -checks=-*,readability-*,performance-*,modernize-*
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Running static analysis"
+    )
+endif()
+
+# Target para benchmarking
+add_custom_target(benchmark
+    COMMAND echo "=== Performance Benchmark ==="
+    COMMAND echo "Build Type: ${CMAKE_BUILD_TYPE}"
+    COMMAND echo "Optimizations: ${OPTIMIZATION_FLAGS}"
+    COMMAND echo "Architecture: ${TARGET_ARCH}"
+    COMMAND echo "AdrenoTools: ${ADRENOTOOLS_AVAILABLE}"
+    COMMENT "Performance benchmark summary"
+)
+
+# Exibir configuração final
+message(STATUS "=== Winlator Build Configuration ===")
+message(STATUS "Build Type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Target Architecture: ${TARGET_ARCH}")
+message(STATUS "Optimization Flags: ${OPTIMIZATION_FLAGS}")
+message(STATUS "Performance Opts: ${ENABLE_PERFORMANCE_OPTIMIZATIONS}")
+message(STATUS "Vulkan Cache: ${ENABLE_VULKAN_CACHE}")
+message(STATUS "JNI Cache: ${ENABLE_JNI_CACHE}")
+message(STATUS "Memory Pools: ${ENABLE_MEMORY_POOLS}")
+message(STATUS "Profiling: ${ENABLE_PROFILING}")
+message(STATUS "AdrenoTools: ${ADRENOTOOLS_AVAILABLE}")
+message(STATUS "=====================================")
+
+# Warnings para configurações problemáticas
+if(CMAKE_BUILD_TYPE STREQUAL "Debug" AND ENABLE_PERFORMANCE_OPTIMIZATIONS)
+    message(WARNING "Performance optimizations enabled in Debug mode - may interfere with debugging")
+endif()
+
+if(NOT ADRENOTOOLS_AVAILABLE)
+    message(WARNING "AdrenoTools not available - performance may be limited on Adreno GPUs")
+endif()

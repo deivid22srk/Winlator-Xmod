@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginLeft="10dp"
+    android:background="#BB000000">
+
+    <!-- VKD3D / Renderer -->
+    <TextView
+        android:id="@+id/TVRenderer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="VKD3D"
+        android:textColor="#F44336"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:layout_marginBottom="2dp" />
+
+    <!-- GPU -->
+    <TextView
+        android:id="@+id/TVGPU"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="GPU 0%"
+        android:textColor="#4CAF50"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:layout_marginBottom="2dp" />
+
+    <!-- CPU -->
+    <TextView
+        android:id="@+id/TVCPU"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CPU 0%"
+        android:textColor="#FF9800"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:layout_marginBottom="2dp" />
+
+    <!-- RAM -->
+    <TextView
+        android:id="@+id/TVRAM"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="RAM 0%"
+        android:textColor="#2196F3"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:layout_marginBottom="2dp" />
+
+    <!-- PWR CHG -->
+    <TextView
+        android:id="@+id/TVPOWER"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="PWR CHG"
+        android:textColor="#9C27B0"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:layout_marginBottom="2dp" />
+
+    <!-- FPS -->
+    <TextView
+        android:id="@+id/TVFPS"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FPS 0"
+        android:textColor="#FFEB3B"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:includeFontPadding="false"
+        android:layout_marginBottom="4dp" />
+
+    <!-- Green line -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="2dp"
+        android:background="#4CAF50" />
+
+</LinearLayout>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:background="?android:attr/selectableItemBackground">
+
+    <!-- File/folder icon -->
+    <ImageView
+        android:id="@+id/iv_file_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="12dp"
+        android:layout_gravity="center_vertical"
+        android:src="@drawable/icon_open"
+        android:tint="@color/colorPrimary" />
+
+    <!-- File details -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tv_file_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            android:ellipsize="end"
+            android:maxLines="1" />
+
+        <TextView
+            android:id="@+id/tv_file_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:layout_marginTop="2dp" />
+
+    </LinearLayout>
+
+    <!-- Selection indicator -->
+    <ImageView
+        android:id="@+id/iv_selection_indicator"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/icon_confirm"
+        android:visibility="gone"
+        android:tint="@color/colorAccent"
+        android:layout_gravity="center_vertical"
+        android:layout_marginStart="8dp" />
+
+</LinearLayout>
