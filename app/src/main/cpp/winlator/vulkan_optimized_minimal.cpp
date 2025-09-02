@@ -28,7 +28,7 @@ void VulkanOptimizer::InitializeJNICache(JNIEnv *env, jobject context) {
     }
     
     // Cache AdrenoToolsManager class
-    jclass local_class = env->FindClass("com/winlator/cmod/contents/AdrenotoolsManager");
+    jclass local_class = env->FindClass("com/winlator/xmod/contents/AdrenotoolsManager");
     if (local_class) {
         jni_cache_.adrenotools_manager_class = (jclass)env->NewGlobalRef(local_class);
         env->DeleteLocalRef(local_class);
@@ -40,7 +40,7 @@ void VulkanOptimizer::InitializeJNICache(JNIEnv *env, jobject context) {
     }
     
     // Cache AppUtils class
-    local_class = env->FindClass("com/winlator/cmod/core/AppUtils");
+    local_class = env->FindClass("com/winlator/xmod/core/AppUtils");
     if (local_class) {
         jni_cache_.app_utils_class = (jclass)env->NewGlobalRef(local_class);
         env->DeleteLocalRef(local_class);

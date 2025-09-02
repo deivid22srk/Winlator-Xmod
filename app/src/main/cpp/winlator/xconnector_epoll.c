@@ -12,13 +12,46 @@
 #include <android/log.h>
 
 #define printf(...) __android_log_print(ANDROID_LOG_DEBUG, "System.out", __VA_ARGS__);
-#define MAX_EVENTS 10
-#define MAX_FDS 32
+#ifndef MAX_EVENTS
+#ifdef MAX_EVENTS_OPTIMAL
+#define MAX_EVENTS MAX_EVENTS_OPTIMAL
+#else
+#define MAX_EVENTS 32
+#endif
+#endif
+#ifndef MAX_FDS
+#ifdef MAX_FDS_OPTIMAL
+#define MAX_FDS MAX_FDS_OPTIMAL
+#else
+#define MAX_FDS 256
+#endif
+#endif
 
 struct epoll_event events[MAX_EVENTS];
 
+static jmethodID s_XC_handleNewConnection = NULL;
+static jmethodID s_XC_handleExistingConnection = NULL;
+static jmethodID s_CS_addAncillaryFd = NULL;
+
+static void ensure_xc_methods(JNIEnv *env, jobject obj) {
+    if (s_XC_handleNewConnection == NULL || s_XC_handleExistingConnection == NULL) {
+        jclass cls = (*env)->GetObjectClass(env, obj);
+        s_XC_handleNewConnection = (*env)->GetMethodID(env, cls, "handleNewConnection", "(I)V");
+        s_XC_handleExistingConnection = (*env)->GetMethodID(env, cls, "handleExistingConnection", "(I)V");
+        (*env)->DeleteLocalRef(env, cls);
+    }
+}
+
+static void ensure_cs_methods(JNIEnv *env, jobject obj) {
+    if (s_CS_addAncillaryFd == NULL) {
+        jclass cls = (*env)->GetObjectClass(env, obj);
+        s_CS_addAncillaryFd = (*env)->GetMethodID(env, cls, "addAncillaryFd", "(I)V");
+        (*env)->DeleteLocalRef(env, cls);
+    }
+}
+
 JNIEXPORT jint JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_createAFUnixSocket(JNIEnv *env, jobject obj,
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_createAFUnixSocket(JNIEnv *env, jobject obj,
                                                                 jstring path) {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
     if (fd < 0) return -1;
@@ -45,22 +78,20 @@ Java_com_winlator_cmod_xconnector_XConnectorEpoll_createAFUnixSocket(JNIEnv *env
 }
 
 JNIEXPORT jint JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_createEpollFd(JNIEnv *env, jobject obj) {
-    return epoll_create(MAX_EVENTS);
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_createEpollFd(JNIEnv *env, jobject obj) {
+    return epoll_create1(0);
 }
 
 JNIEXPORT void JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_closeFd(JNIEnv *env, jobject obj, jint fd) {
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_closeFd(JNIEnv *env, jobject obj, jint fd) {
     close(fd);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_doEpollIndefinitely(JNIEnv *env, jobject obj,
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_doEpollIndefinitely(JNIEnv *env, jobject obj,
                                                                  jint epollFd, jint serverFd,
                                                                  jboolean addClientToEpoll) {
-    jclass cls = (*env)->GetObjectClass(env, obj);
-    jmethodID handleNewConnection = (*env)->GetMethodID(env, cls, "handleNewConnection", "(I)V");
-    jmethodID handleExistingConnection = (*env)->GetMethodID(env, cls, "handleExistingConnection", "(I)V");
+    ensure_xc_methods(env, obj);
 
     int numFds = epoll_wait(epollFd, events, MAX_EVENTS, -1);
     for (int i = 0; i < numFds; i++) {
@@ -73,14 +104,14 @@ Java_com_winlator_cmod_xconnector_XConnectorEpoll_doEpollIndefinitely(JNIEnv *en
                     event.events = EPOLLIN;
 
                     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &event) >= 0) {
-                        (*env)->CallVoidMethod(env, obj, handleNewConnection, clientFd);
+                        (*env)->CallVoidMethod(env, obj, s_XC_handleNewConnection, clientFd);
                     }
                 }
-                else (*env)->CallVoidMethod(env, obj, handleNewConnection, clientFd);
+                else (*env)->CallVoidMethod(env, obj, s_XC_handleNewConnection, clientFd);
             }
         }
         else if (events[i].events & EPOLLIN) {
-            (*env)->CallVoidMethod(env, obj, handleExistingConnection, events[i].data.fd);
+            (*env)->CallVoidMethod(env, obj, s_XC_handleExistingConnection, events[i].data.fd);
         }
     }
 
@@ -88,7 +119,7 @@ Java_com_winlator_cmod_xconnector_XConnectorEpoll_doEpollIndefinitely(JNIEnv *en
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_addFdToEpoll(JNIEnv *env, jobject obj,
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_addFdToEpoll(JNIEnv *env, jobject obj,
                                                           jint epollFd,
                                                           jint fd) {
     struct epoll_event event;
@@ -99,32 +130,32 @@ Java_com_winlator_cmod_xconnector_XConnectorEpoll_addFdToEpoll(JNIEnv *env, jobj
 }
 
 JNIEXPORT void JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_removeFdFromEpoll(JNIEnv *env, jobject obj,
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_removeFdFromEpoll(JNIEnv *env, jobject obj,
                                                                jint epollFd, jint fd) {
     epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, NULL);
 }
 
 JNIEXPORT jint JNICALL
-Java_com_winlator_cmod_xconnector_ClientSocket_read(JNIEnv *env, jobject obj, jint fd, jobject data,
+Java_com_winlator_xmod_xconnector_ClientSocket_read(JNIEnv *env, jobject obj, jint fd, jobject data,
                                                jint offset, jint length) {
     char *dataAddr = (*env)->GetDirectBufferAddress(env, data);
     return read(fd, dataAddr + offset, length);
 }
 
 JNIEXPORT jint JNICALL
-Java_com_winlator_cmod_xconnector_ClientSocket_write(JNIEnv *env, jobject obj, jint fd, jobject data,
+Java_com_winlator_xmod_xconnector_ClientSocket_write(JNIEnv *env, jobject obj, jint fd, jobject data,
                                                 jint length) {
     char *dataAddr = (*env)->GetDirectBufferAddress(env, data);
     return write(fd, dataAddr, length);
 }
 
 JNIEXPORT jint JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_createEventFd(JNIEnv *env, jobject obj) {
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_createEventFd(JNIEnv *env, jobject obj) {
     return eventfd(0, EFD_NONBLOCK);
 }
 
 JNIEXPORT jint JNICALL
-Java_com_winlator_cmod_xconnector_ClientSocket_recvAncillaryMsg(JNIEnv *env, jobject obj, jint clientFd, jobject data,
+Java_com_winlator_xmod_xconnector_ClientSocket_recvAncillaryMsg(JNIEnv *env, jobject obj, jint clientFd, jobject data,
                                                            jint offset, jint length) {
     char *dataAddr = (*env)->GetDirectBufferAddress(env, data);
 
@@ -151,11 +182,10 @@ Java_com_winlator_cmod_xconnector_ClientSocket_recvAncillaryMsg(JNIEnv *env, job
             if (cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_RIGHTS) {
                 int numFds = (cmsg->cmsg_len - CMSG_LEN(0)) / sizeof(int);
                 if (numFds > 0) {
-                    jclass cls = (*env)->GetObjectClass(env, obj);
-                    jmethodID addAncillaryFd = (*env)->GetMethodID(env, cls, "addAncillaryFd", "(I)V");
+                    ensure_cs_methods(env, obj);
                     for (int i = 0; i < numFds; i++) {
                         int ancillaryFd = ((int*)CMSG_DATA(cmsg))[i];
-                        (*env)->CallVoidMethod(env, obj, addAncillaryFd, ancillaryFd);
+                        (*env)->CallVoidMethod(env, obj, s_CS_addAncillaryFd, ancillaryFd);
                     }
                 }
             }
@@ -165,7 +195,7 @@ Java_com_winlator_cmod_xconnector_ClientSocket_recvAncillaryMsg(JNIEnv *env, job
 }
 
 JNIEXPORT jint JNICALL
-Java_com_winlator_cmod_xconnector_ClientSocket_sendAncillaryMsg(JNIEnv *env, jobject obj, jint clientFd,
+Java_com_winlator_xmod_xconnector_ClientSocket_sendAncillaryMsg(JNIEnv *env, jobject obj, jint clientFd,
                                                            jobject data, jint length, jint ancillaryFd) {
     char *dataAddr = (*env)->GetDirectBufferAddress(env, data);
 
@@ -195,7 +225,7 @@ Java_com_winlator_cmod_xconnector_ClientSocket_sendAncillaryMsg(JNIEnv *env, job
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_waitForSocketRead(JNIEnv *env, jobject obj, jint clientFd, jint shutdownFd) {
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_waitForSocketRead(JNIEnv *env, jobject obj, jint clientFd, jint shutdownFd) {
     struct pollfd pfds[2];
     pfds[0].fd = clientFd;
     pfds[0].events = POLLIN;
@@ -207,18 +237,17 @@ Java_com_winlator_cmod_xconnector_XConnectorEpoll_waitForSocketRead(JNIEnv *env,
     if (res < 0 || (pfds[1].revents & POLLIN)) return JNI_FALSE;
 
     if (pfds[0].revents & POLLIN) {
-        jclass cls = (*env)->GetObjectClass(env, obj);
-        jmethodID handleExistingConnection = (*env)->GetMethodID(env, cls, "handleExistingConnection", "(I)V");
-        (*env)->CallVoidMethod(env, obj, handleExistingConnection, clientFd);
+        ensure_xc_methods(env, obj);
+        (*env)->CallVoidMethod(env, obj, s_XC_handleExistingConnection, clientFd);
     }
     return JNI_TRUE;
 }
 
 JNIEXPORT jintArray JNICALL
-Java_com_winlator_cmod_xconnector_XConnectorEpoll_pollEpollEvents(JNIEnv *env, jobject obj,
+Java_com_winlator_xmod_xconnector_XConnectorEpoll_pollEpollEvents(JNIEnv *env, jobject obj,
                                                              jint epollFd, jint maxEvents) {
     struct epoll_event events[maxEvents];
-    int numFds = epoll_wait(epollFd, events, maxEvents, -1); // Wait indefinitely
+    int numFds = epoll_wait(epollFd, events, maxEvents, -1);
 
     if (numFds < 0) return NULL;
 
@@ -228,7 +257,7 @@ Java_com_winlator_cmod_xconnector_XConnectorEpoll_pollEpollEvents(JNIEnv *env, j
     jint *r = (*env)->GetIntArrayElements(env, result, 0);
 
     for (int i = 0; i < numFds; i++) {
-        r[i] = events[i].data.fd; // Store file descriptor
+        r[i] = events[i].data.fd;
     }
 
     (*env)->ReleaseIntArrayElements(env, result, r, 0);

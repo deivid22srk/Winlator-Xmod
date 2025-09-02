@@ -114,18 +114,18 @@ downloadProton.dependsOn(downloadImageFS)
 preBuild.dependsOn(downloadProton)
 
 android {
-    namespace 'com.winlator.cmod'
+    namespace 'com.winlator.xmod'
     // Keep compileSdk from your current config. If you want to match Termux-X11, you could set to 34.
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.winlator.cmod"
+        applicationId "com.winlator.xmod"
         minSdkVersion 26
         // We’re preserving Winlator’s request to keep targetSdkVersion at 28
         targetSdkVersion 28
 
-        versionCode 20
-        versionName "7.1.4x-cmod"
+        versionCode 1
+        versionName "winlator xmod"
 
         // External native build from Winlator
         externalNativeBuild {

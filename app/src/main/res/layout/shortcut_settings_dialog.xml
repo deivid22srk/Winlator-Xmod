@@ -390,7 +390,7 @@
             android:orientation="vertical"
             android:visibility="gone">
 
-            <com.winlator.cmod.widget.EnvVarsView
+            <com.winlator.xmod.widget.EnvVarsView
                 android:id="@+id/EnvVarsView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -781,7 +781,7 @@
                 android:text="@string/processor_affinity"
                 android:layout_marginTop="8dp" />
 
-            <com.winlator.cmod.widget.CPUListView
+            <com.winlator.xmod.widget.CPUListView
                 android:id="@+id/CPUListView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
