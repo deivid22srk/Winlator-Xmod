@@ -491,7 +491,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         this.graphicsDriverConfig = GraphicsDriverConfigDialog.parseGraphicsDriverConfig(graphicsDriverConfig);
 
-        if (dxwrapper.equals("dxvk") || dxwrapper.equals("vkd3d")) {
+        if (dxwrapper.equals("dxvk") || dxwrapper.equals("vkd3d") || dxwrapper.equals("unified")) {
             this.dxwrapperConfig = DXVKConfigDialog.parseConfig(dxwrapperConfig);
         }
 
@@ -997,15 +997,25 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             containerDataChanged = true;
         }
 
-        String dxwrapper = this.dxwrapper;
-        if (dxwrapper.equals("dxvk"))
-            dxwrapper = "dxvk-"+dxwrapperConfig.get("version");
-        else if (dxwrapper.equals("vkd3d"))
-            dxwrapper = "vkd3d-"+dxwrapperConfig.get("vkd3dVersion");
+        String dxwrapperExtra;
+        if (this.dxwrapper.equals("dxvk")) {
+            dxwrapperExtra = "dxvk-" + dxwrapperConfig.get("version");
+        } else if (this.dxwrapper.equals("vkd3d")) {
+            dxwrapperExtra = "vkd3d-" + dxwrapperConfig.get("vkd3dVersion");
+        } else if (this.dxwrapper.equals("unified")) {
+            dxwrapperExtra = "both:" + "vkd3d-" + dxwrapperConfig.get("vkd3dVersion") + "|" + "dxvk-" + dxwrapperConfig.get("version");
+        } else {
+            dxwrapperExtra = this.dxwrapper;
+        }
 
-        if (!dxwrapper.equals(container.getExtra("dxwrapper"))) {
-            extractDXWrapperFiles(dxwrapper);
-            container.putExtra("dxwrapper", dxwrapper);
+        if (!dxwrapperExtra.equals(container.getExtra("dxwrapper"))) {
+            if (this.dxwrapper.equals("unified")) {
+                extractDXWrapperFiles("vkd3d-" + dxwrapperConfig.get("vkd3dVersion"));
+                extractDXWrapperFiles("dxvk-" + dxwrapperConfig.get("version"));
+            } else {
+                extractDXWrapperFiles(dxwrapperExtra);
+            }
+            container.putExtra("dxwrapper", dxwrapperExtra);
             containerDataChanged = true;
         }
 
@@ -1477,6 +1487,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         inputControlsView.setVisibility(View.VISIBLE);
         inputControlsView.requestFocus();
         inputControlsView.setProfile(profile);
+        if (winHandler != null) { winHandler.pushGamepadInfo(); winHandler.sendGamepadState(); }
 
         touchpadView.setSensitivity(profile.getCursorSpeed() * globalCursorSpeed);
         touchpadView.setPointerButtonRightEnabled(false);
@@ -1488,6 +1499,7 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
         inputControlsView.setShowTouchscreenControls(true);
         inputControlsView.setVisibility(View.GONE);
         inputControlsView.setProfile(null);
+        if (winHandler != null) { winHandler.pushGamepadInfo(); winHandler.sendGamepadState(); }
 
         touchpadView.setSensitivity(globalCursorSpeed);
         touchpadView.setPointerButtonLeftEnabled(true);
@@ -1508,6 +1520,13 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
             DXVKConfigDialog.setEnvVars(this, dxwrapperConfig, envVars);
         } else if (dxwrapper.equals("vkd3d")) {
             VKD3DConfigDialog.setEnvVars(this, dxwrapperConfig, envVars);
+            // Apply specific fixes for games with DX12 detection issues
+            applyGameSpecificVKD3DFixes(envVars);
+        } else if (dxwrapper.equals("unified")) {
+            DXVKConfigDialog.setEnvVars(this, dxwrapperConfig, envVars);
+            VKD3DConfigDialog.setEnvVars(this, dxwrapperConfig, envVars);
+            // Apply specific fixes for games with DX12 detection issues
+            applyGameSpecificVKD3DFixes(envVars);
         }
 
         boolean useDRI3 = preferences.getBoolean("use_dri3", true);
@@ -1522,12 +1541,22 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         envVars.put("GALLIUM_DRIVER", "zink");
 
-        if (firstTimeBoot) {
-            Log.d("XServerDisplayActivity", "First time container boot, re-extracting libs");
-            TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "graphics_driver/wrapper" + ".tzst", rootDir);
-            TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "graphics_driver/extra_libs" + ".tzst", rootDir);
-            if (wineInfo.isArm64EC())
-                TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "graphics_driver/zink_dlls" + ".tzst", new File(rootDir, imageFs.WINEPREFIX + "/drive_c/windows"));
+        boolean forceReextractWrapper = "wrapper-xmod".equals(graphicsDriver);
+        if (firstTimeBoot || forceReextractWrapper) {
+            Log.d("XServerDisplayActivity", (firstTimeBoot ? "First time container boot" : "Wrapper Xmod selected") + ", extracting libs");
+            String wrapperAsset;
+            if ("wrapper-v3".equals(graphicsDriver) && FileUtils.getSize(this, "graphics_driver/wrapper-v3.tzst") > 0) {
+                wrapperAsset = "graphics_driver/wrapper-v3.tzst";
+            } else if ("wrapper-xmod".equals(graphicsDriver) && FileUtils.getSize(this, "graphics_driver/wrapper-xmod.tzst") > 0) {
+                wrapperAsset = "graphics_driver/wrapper-xmod.tzst";
+            } else {
+                wrapperAsset = "graphics_driver/wrapper.tzst";
+            }
+            TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, wrapperAsset, rootDir);
+            TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "graphics_driver/extra_libs.tzst", rootDir);
+            if (wineInfo.isArm64EC()) {
+                TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "graphics_driver/zink_dlls.tzst", new File(rootDir, imageFs.WINEPREFIX + "/drive_c/windows"));
+            }
         }
 
         if (adrenoToolsDriverId != "System") {
@@ -1667,8 +1696,10 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
         if (dxwrapper.contains("vkd3d")) {
             ContentProfile profile = contentsManager.getProfileByEntryName(dxwrapper);
-            Log.d(TAG, "Extracting DXVK 2.3.1");
-            TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, "dxwrapper/dxvk-2.3.1" + ".tzst", windowsDir, onExtractFileListener);
+            String dxvkVer = (dxwrapperConfig != null) ? dxwrapperConfig.get("version") : DefaultVersion.DXVK;
+            String dxvkAsset = "dxwrapper/dxvk-" + dxvkVer + ".tzst";
+            Log.d(TAG, "Ensuring DXVK present for VKD3D, extracting: " + dxvkVer);
+            TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, this, dxvkAsset, windowsDir, onExtractFileListener);
             if (profile != null) {
                 Log.d(TAG, "Applying user-defined VKD3D content profile: " + dxwrapper);
                 contentsManager.applyContent(profile);
@@ -1965,6 +1996,40 @@ public class XServerDisplayActivity extends AppCompatActivity implements Navigat
 
     public void setScreenEffectProfile(String screenEffectProfile) {
         this.screenEffectProfile = screenEffectProfile;
+    }
+    
+    private void applyGameSpecificVKD3DFixes(EnvVars envVars) {
+        String executable = getExecutable();
+        if (executable == null) return;
+        
+        String executableName = executable.toLowerCase();
+        
+        // Hell Is Us specific fixes
+        if (executableName.contains("hellisus") || executableName.contains("hell-is-us")) {
+            Log.d("XServerDisplayActivity", "Applying Hell Is Us specific VKD3D fixes");
+            
+            // Force DirectX 12 capabilities reporting
+            envVars.put("VKD3D_CONFIG", "force_host_cached,allow_invalid_descriptors,force_capability_tier_3");
+            envVars.put("VKD3D_FORCE_CAPABILITY", "1");
+            envVars.put("VKD3D_FORCE_FEATURE_LEVEL", "12_2");
+            
+            // Disable problematic DirectX verification 
+            envVars.put("WINE_DISABLE_DX_CHECK", "1");
+            envVars.put("VKD3D_SKIP_APPLICATION_WORKAROUNDS", "0");
+            
+            // Enhanced resource management
+            envVars.put("VKD3D_HEAP_BUDGETS", "1");
+            envVars.put("VKD3D_MEMORY_ALLOCATOR", "default");
+        }
+        
+        // General Unreal Engine game fixes (common DX12 detection issues)
+        if (executableName.contains("win64-shipping") || executableName.contains("unreal")) {
+            Log.d("XServerDisplayActivity", "Applying Unreal Engine VKD3D fixes");
+            
+            envVars.put("VKD3D_FORCE_FEATURE_LEVEL", "12_1");
+            envVars.put("VKD3D_CONFIG", "force_host_cached");
+            envVars.put("VKD3D_VULKAN_DEVICE", "-1");
+        }
     }
 
 }

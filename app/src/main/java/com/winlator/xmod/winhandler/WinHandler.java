@@ -451,7 +451,7 @@ public class WinHandler {
 
                 final boolean enabled = currentController != null || useVirtualGamepad;
 
-                if (enabled && notify) {
+                if (notify) {
                     if (!gamepadClients.contains(port)) gamepadClients.add(port);
                 } else {
                     gamepadClients.remove(Integer.valueOf(port));
@@ -570,6 +570,10 @@ public class WinHandler {
         if (!initReceived || gamepadClients.isEmpty() || xinputDisabled ) return; // Add this check
         final ControlsProfile profile = activity.getInputControlsView().getProfile();
         final boolean useVirtualGamepad = profile != null && profile.isVirtualGamepad();
+        if (!useVirtualGamepad && (currentController == null || !currentController.isConnected())) {
+            currentController = ExternalController.getController(0);
+            if (currentController != null) currentController.setTriggerType(triggerType);
+        }
         final boolean enabled = currentController != null || useVirtualGamepad;
 
         for (final int port : gamepadClients) {
@@ -598,6 +602,36 @@ public class WinHandler {
         this.xinputDisabled = disabled;
         this.xinputDisabledInitialized = true; // Mark as initialized
         Log.d("WinHandler", "XInput Disabled set to: " + xinputDisabled);
+    }
+
+    // Proactively push gamepad info to clients (helps when enabling virtual gamepad mid-session)
+    public void pushGamepadInfo() {
+        if (!initReceived || gamepadClients.isEmpty()) return;
+        final ControlsProfile profile = activity.getInputControlsView().getProfile();
+        final boolean useVirtualGamepad = profile != null && profile.isVirtualGamepad();
+        if (!useVirtualGamepad && (currentController == null || !currentController.isConnected())) {
+            currentController = ExternalController.getController(0);
+            if (currentController != null) currentController.setTriggerType(triggerType);
+        }
+        final boolean enabled = currentController != null || useVirtualGamepad;
+
+        for (final int port : gamepadClients) {
+            addAction(() -> {
+                sendData.rewind();
+                sendData.put(RequestCodes.GET_GAMEPAD);
+                if (enabled) {
+                    sendData.putInt(!useVirtualGamepad ? currentController.getDeviceId() : profile.id);
+                    // Use current input type flags
+                    sendData.put(inputType);
+                    byte[] bytes = (useVirtualGamepad ? profile.getName() : currentController.getName()).getBytes();
+                    sendData.putInt(bytes.length);
+                    sendData.put(bytes);
+                } else {
+                    sendData.putInt(0);
+                }
+                sendPacket(port);
+            });
+        }
     }
 
 

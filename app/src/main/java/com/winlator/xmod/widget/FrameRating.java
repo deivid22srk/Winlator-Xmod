@@ -22,6 +22,7 @@ import com.winlator.xmod.container.Container;
 import com.winlator.xmod.container.Shortcut;
 import com.winlator.xmod.core.GPUInformation;
 import com.winlator.xmod.core.StringUtils;
+import com.winlator.xmod.core.CPUStatus;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -121,7 +122,7 @@ public class FrameRating extends FrameLayout implements Runnable {
     private long lastCpuTime = 0;
     private int lastCpuUsage = 0; // Keep track of last known good value
 
-    private String getCPUUsagePercentage() {
+    private String getCPUUsagePercentageProcStat() {
         try {
             BufferedReader reader = new BufferedReader(new FileReader("/proc/stat"));
             String line = reader.readLine();
@@ -174,6 +175,35 @@ public class FrameRating extends FrameLayout implements Runnable {
         // Fallbacks: prefer last known good value, otherwise 0%
         return (lastCpuUsage > 0 ? lastCpuUsage : 0) + "%";
     }
+
+    // CPU usage using DVFS (Task Manager logic): average current freq vs max freq
+    private String getCPUUsagePercentageDVFS() {
+        try {
+            short[] current = CPUStatus.getCurrentClockSpeeds();
+            if (current != null && current.length > 0) {
+                long sumPct = 0;
+                int cores = 0;
+                for (int i = 0; i < current.length; i++) {
+                    short max = CPUStatus.getMaxClockSpeed(i);
+                    if (max > 0) {
+                        int pct = Math.min(100, Math.max(0, (current[i] * 100) / max));
+                        sumPct += pct;
+                        cores++;
+                    }
+                }
+                if (cores > 0) {
+                    int usage = (int)(sumPct / cores);
+                    // Smooth with EMA against lastCpuUsage
+                    int smoothed = (int)(0.4f * usage + 0.6f * lastCpuUsage);
+                    lastCpuUsage = smoothed;
+                    return smoothed + "%";
+                }
+            }
+        } catch (Exception ignored) {}
+        // Fallback to /proc/stat method
+        return getCPUUsagePercentageProcStat();
+    }
+
 
     private String getPowerStatus() {
         try {
@@ -261,7 +291,7 @@ public class FrameRating extends FrameLayout implements Runnable {
             // Method 4: Enhanced estimation based on CPU usage and device type
             if (voltage > 0) {
                 try {
-                    String cpuUsage = getCPUUsagePercentage();
+                    String cpuUsage = getCPUUsagePercentageDVFS();
                     int cpu = Integer.parseInt(cpuUsage.replace("%", ""));
                     
                     // Base power consumption based on device characteristics
@@ -449,6 +479,8 @@ public class FrameRating extends FrameLayout implements Runnable {
 
     private int lastGpuUsage = 0; // Keep track of last known good GPU value
     private long lastGpuTime = 0; // Track time for GPU calculations
+    private long lastGpuBusy = -1; // For delta-based Adreno gpubusy
+    private long lastGpuTotal = -1;
 
     private String getGPUUsage() {
         long currentTime = SystemClock.elapsedRealtime();
@@ -464,11 +496,19 @@ public class FrameRating extends FrameLayout implements Runnable {
                         long busy = Long.parseLong(parts[0]);
                         long total = Long.parseLong(parts[1]);
                         if (total > 0) {
-                            int usage = (int) Math.max(0, Math.min(100, (busy * 100L) / total));
-                            // Smooth
+                            int usage;
+                            if (lastGpuBusy >= 0 && lastGpuTotal >= 0 && total > lastGpuTotal && busy >= lastGpuBusy) {
+                                long deltaBusy = busy - lastGpuBusy;
+                                long deltaTotal = total - lastGpuTotal;
+                                usage = deltaTotal > 0 ? (int)Math.max(0, Math.min(100, (deltaBusy * 100L) / deltaTotal)) : 0;
+                            } else {
+                                usage = (int) Math.max(0, Math.min(100, (busy * 100L) / total));
+                            }
                             usage = (int) (0.4f * usage + 0.6f * lastGpuUsage);
                             lastGpuUsage = usage;
                             lastGpuTime = currentTime;
+                            lastGpuBusy = busy;
+                            lastGpuTotal = total;
                             return usage + "%";
                         }
                     }
@@ -650,7 +690,7 @@ public class FrameRating extends FrameLayout implements Runnable {
         tvRAM.setText("RAM " + getRAMUsagePercentage());
         
         // Update CPU usage
-        tvCPU.setText("CPU " + getCPUUsagePercentage());
+        tvCPU.setText("CPU " + getCPUUsagePercentageDVFS());
         
         // Update power status with TDP
         tvPower.setText(getPowerStatus());

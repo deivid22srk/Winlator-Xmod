@@ -1,41 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.drawerlayout.widget.DrawerLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/DrawerLayout"
-    android:fitsSystemWindows="true"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <LinearLayout
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/Toolbar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="?actionBarSize"
+        android:background="@color/colorPrimary"
+        app:title="@string/app_name"
+        app:titleTextColor="#ffffff"
+        app:titleTextAppearance="@style/TextAppearance.AppCompat.Medium" />
 
-        <androidx.appcompat.widget.Toolbar
-            android:layout_width="match_parent"
-            android:layout_height="?actionBarSize"
-            android:id="@+id/Toolbar"
-            android:background="@color/colorPrimary"
-            app:layout_scrollFlags="enterAlways|scroll"
-            app:title="@string/app_name"
-            app:titleTextColor="#ffffff"
-            app:titleTextAppearance="@style/TextAppearance.AppCompat.Medium" />
+    <FrameLayout
+        android:id="@+id/FLFragmentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
-        <FrameLayout
-            android:id="@+id/FLFragmentContainer"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
-    </LinearLayout>
-
-    <com.google.android.material.navigation.NavigationView
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:id="@+id/NavigationView"
-        android:fitsSystemWindows="true"
-        app:headerLayout="@layout/main_menu_header"
-        app:itemIconTint="@color/colorAccent"
-        app:menu="@menu/main_menu"/>
-</androidx.drawerlayout.widget.DrawerLayout>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/BottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/surface_color"
+        app:labelVisibilityMode="labeled"
+        app:materialThemeOverlay="@style/ThemeOverlay.MaterialComponents"
+        app:itemIconTint="@color/bottom_nav_icon_tint"
+        app:itemTextColor="@color/bottom_nav_text_tint"
+        app:menu="@menu/bottom_nav_menu" />
+</LinearLayout>

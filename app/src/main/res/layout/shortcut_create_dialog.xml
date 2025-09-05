@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Shortcut name"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginBottom="6dp" />
+
+    <EditText
+        android:id="@+id/ETShortcutName"
+        android:layout_width="240dp"
+        android:layout_height="wrap_content"
+        android:singleLine="true"
+        android:hint="Name"
+        android:imeOptions="actionDone" />
+
+    <View
+        style="@style/HorizontalLine"
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="12dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Cover art (optional)"
+        android:textStyle="bold"
+        android:textSize="14sp"
+        android:layout_marginBottom="6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:id="@+id/IVCoverPreview"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:src="@drawable/wallpaper"
+            android:scaleType="centerCrop"
+            android:background="@drawable/bordered_panel"
+            android:contentDescription="Cover preview" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="12dp">
+
+            <Button
+                android:id="@+id/BTChooseCover"
+                style="@style/ButtonNeutral"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose image" />
+
+            <Button
+                android:id="@+id/BTRemoveCover"
+                style="@style/ButtonNeutral"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Remove"
+                android:layout_marginStart="8dp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

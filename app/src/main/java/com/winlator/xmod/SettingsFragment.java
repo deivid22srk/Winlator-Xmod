@@ -38,7 +38,7 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.material.navigation.NavigationView;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.winlator.xmod.box64.Box64EditPresetDialog;
 import com.winlator.xmod.box64.Box64Preset;
 import com.winlator.xmod.box64.Box64PresetManager;
@@ -116,6 +116,25 @@ public class SettingsFragment extends Fragment {
         btnConfigureGyro.setOnClickListener(v -> showGyroConfigDialog());
 
         ((AppCompatActivity)getActivity()).getSupportActionBar().setTitle(R.string.settings);
+
+        View goInput = view.findViewById(R.id.BTGoInputControls);
+        View goAdreno = view.findViewById(R.id.BTGoAdrenoTools);
+        View goContents = view.findViewById(R.id.BTGoContents);
+        if (goInput != null) goInput.setOnClickListener(v -> {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).navigateToMenu(R.id.main_menu_input_controls);
+            }
+        });
+        if (goAdreno != null) goAdreno.setOnClickListener(v -> {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).navigateToMenu(R.id.main_menu_adrenotools_gpu_drivers);
+            }
+        });
+        if (goContents != null) goContents.setOnClickListener(v -> {
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).navigateToMenu(R.id.main_menu_contents);
+            }
+        });
     }
 
 
@@ -410,8 +429,10 @@ public class SettingsFragment extends Fragment {
             saveCustomApiKeySettings(editor);
 
             if (editor.commit()) {
-                NavigationView navigationView = getActivity().findViewById(R.id.NavigationView);
-                navigationView.setCheckedItem(R.id.main_menu_containers);
+                BottomNavigationView bottomNavigation = getActivity().findViewById(R.id.BottomNavigation);
+                if (bottomNavigation != null) {
+                    bottomNavigation.setSelectedItemId(R.id.main_menu_containers);
+                }
                 FragmentManager fragmentManager = getParentFragmentManager();
                 fragmentManager.beginTransaction()
                         .replace(R.id.FLFragmentContainer, new ContainersFragment())

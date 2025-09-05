@@ -2,6 +2,7 @@ package com.winlator.xmod.inputcontrols;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.graphics.PointF;
@@ -86,6 +87,7 @@ public class ControlElement {
     private RangeScroller scroller;
     private CubicBezierInterpolator interpolator;
     private Object touchTime;
+    private boolean pressed = false;
 
     public ControlElement(InputControlsView inputControlsView) {
         this.inputControlsView = inputControlsView;
@@ -300,8 +302,6 @@ public class ControlElement {
         return boundingBox;
     }
 
-
-
     private String getDisplayText() {
         if (text != null && !text.isEmpty()) {
             return text;
@@ -348,10 +348,8 @@ public class ControlElement {
         int snappingSize = inputControlsView.getSnappingSize();
         Paint paint = inputControlsView.getPaint();
         int primaryColor = inputControlsView.getPrimaryColor();
-
-        paint.setColor(selected ? inputControlsView.getSecondaryColor() : primaryColor);
-        paint.setStyle(Paint.Style.STROKE);
-        float strokeWidth = snappingSize * 0.25f;
+        int strokeColor = isSelected() ? inputControlsView.getSecondaryColor() : primaryColor;
+        float strokeWidth = snappingSize * 0.25f * scale;
         paint.setStrokeWidth(strokeWidth);
         Rect boundingBox = getBoundingBox();
 
@@ -360,6 +358,32 @@ public class ControlElement {
                 float cx = boundingBox.centerX();
                 float cy = boundingBox.centerY();
 
+                int fillAlpha = Math.min(255, (int)(Color.alpha(primaryColor) * (pressed || selected ? 1.5f : 1.0f)));
+                int fillColor = ColorUtils.setAlphaComponent(primaryColor, fillAlpha);
+
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(fillColor);
+                switch (shape) {
+                    case CIRCLE:
+                        canvas.drawCircle(cx, cy, boundingBox.width() * 0.5f, paint);
+                        break;
+                    case RECT:
+                        canvas.drawRect(boundingBox, paint);
+                        break;
+                    case ROUND_RECT: {
+                        float radius = boundingBox.height() * 0.5f;
+                        canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                        break;
+                    }
+                    case SQUARE: {
+                        float radius = snappingSize * 0.75f * scale;
+                        canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+                        break;
+                    }
+                }
+
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(strokeColor);
                 switch (shape) {
                     case CIRCLE:
                         canvas.drawCircle(cx, cy, boundingBox.width() * 0.5f, paint);
@@ -398,6 +422,13 @@ public class ControlElement {
                 float offsetX = snappingSize * 2 * scale;
                 float offsetY = snappingSize * 3 * scale;
                 float start = snappingSize * scale;
+
+                int fillAlpha = Math.min(255, (int)(Color.alpha(primaryColor) * 0.6f));
+                int fillColor = ColorUtils.setAlphaComponent(primaryColor, fillAlpha);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(fillColor);
+                canvas.drawCircle(cx, cy, boundingBox.height() * 0.5f, paint);
+
                 Path path = inputControlsView.getPath();
                 path.reset();
 
@@ -429,12 +460,14 @@ public class ControlElement {
                 path.lineTo(cx + offsetY, cy + offsetX);
                 path.close();
 
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(strokeColor);
                 canvas.drawPath(path, paint);
                 break;
             }
             case RANGE_BUTTON: {
                 Range range = getRange();
-                int oldColor = paint.getColor();
+                int oldColor = strokeColor;
                 float radius = snappingSize * 0.75f * scale;
                 float elementSize = scroller.getElementSize();
                 float minTextSize = snappingSize * 2 * scale;
@@ -447,6 +480,16 @@ public class ControlElement {
                     float lineTop = boundingBox.top + strokeWidth * 0.5f;
                     float lineBottom = boundingBox.bottom - strokeWidth * 0.5f;
                     float startX = boundingBox.left;
+
+                    // fill background
+                    int fillAlpha = Math.min(255, (int)(Color.alpha(primaryColor) * 0.6f));
+                    int fillColor = ColorUtils.setAlphaComponent(primaryColor, fillAlpha);
+                    paint.setStyle(Paint.Style.FILL);
+                    paint.setColor(fillColor);
+                    canvas.drawRoundRect(startX, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+
+                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setColor(oldColor);
                     canvas.drawRoundRect(startX, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
 
                     canvas.save();
@@ -480,6 +523,15 @@ public class ControlElement {
                     float lineLeft = boundingBox.left + strokeWidth * 0.5f;
                     float lineRight = boundingBox.right - strokeWidth * 0.5f;
                     float startY = boundingBox.top;
+
+                    int fillAlpha = Math.min(255, (int)(Color.alpha(primaryColor) * 0.6f));
+                    int fillColor = ColorUtils.setAlphaComponent(primaryColor, fillAlpha);
+                    paint.setStyle(Paint.Style.FILL);
+                    paint.setColor(fillColor);
+                    canvas.drawRoundRect(boundingBox.left, startY, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+
+                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setColor(oldColor);
                     canvas.drawRoundRect(boundingBox.left, startY, boundingBox.right, boundingBox.bottom, radius, radius, paint);
 
                     canvas.save();
@@ -511,32 +563,48 @@ public class ControlElement {
                 break;
             }
             case STICK: {
-                int cx = boundingBox.centerX();  // Fixed outer circle center
-                int cy = boundingBox.centerY();  // Fixed outer circle center
-                int oldColor = paint.getColor();
+                int cx = boundingBox.centerX();
+                int cy = boundingBox.centerY();
 
-                // Draw the outer circle (base of the stick)
+                // background fill for base
+                int fillAlpha = Math.min(255, (int)(Color.alpha(primaryColor) * 0.5f));
+                int fillColor = ColorUtils.setAlphaComponent(primaryColor, fillAlpha);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(fillColor);
                 canvas.drawCircle(cx, cy, boundingBox.height() * 0.5f, paint);
 
-                // Draw the inner thumbstick (current position based on gyroscope movement)
+                // base stroke
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(strokeColor);
+                canvas.drawCircle(cx, cy, boundingBox.height() * 0.5f, paint);
+
+                // thumb
                 float thumbstickX = getCurrentPosition().x;
                 float thumbstickY = getCurrentPosition().y;
-
-                short thumbRadius = (short) (snappingSize * 3.5f * scale); // Radius of the thumbstick
+                short thumbRadius = (short) (snappingSize * 3.5f * scale);
                 paint.setStyle(Paint.Style.FILL);
-                paint.setColor(ColorUtils.setAlphaComponent(primaryColor, 50)); // Semi-transparent fill for thumbstick
-                canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius, paint); // Draw thumbstick
+                paint.setColor(ColorUtils.setAlphaComponent(primaryColor, 50));
+                canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius, paint);
 
-                // Draw the thumbstick border
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setColor(oldColor);
-                canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius + strokeWidth * 0.5f, paint);
+                paint.setColor(strokeColor);
+                canvas.drawCircle(thumbstickX, thumbstickY, thumbRadius + (strokeWidth * 0.5f), paint);
                 break;
             }
 
             case TRACKPAD: {
                 float radius = boundingBox.height() * 0.15f;
+
+                int fillAlpha = Math.min(255, (int)(Color.alpha(primaryColor) * 0.5f));
+                int fillColor = ColorUtils.setAlphaComponent(primaryColor, fillAlpha);
+                paint.setStyle(Paint.Style.FILL);
+                paint.setColor(fillColor);
                 canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setColor(strokeColor);
+                canvas.drawRoundRect(boundingBox.left, boundingBox.top, boundingBox.right, boundingBox.bottom, radius, radius, paint);
+
                 float offset = strokeWidth * 2.5f;
                 float innerStrokeWidth = strokeWidth * 2;
                 float innerHeight = boundingBox.height() - offset * 2;
@@ -604,6 +672,8 @@ public class ControlElement {
             if (type == Type.BUTTON) {
                 if (isKeepButtonPressedAfterMinTime()) touchTime = System.currentTimeMillis();
                 if (!toggleSwitch || !selected) inputControlsView.handleInputEvent(getBindingAt(0), true);
+                pressed = true;
+                inputControlsView.invalidate();
                 return true;
             }
             else if (type == Type.RANGE_BUTTON) {
@@ -749,8 +819,9 @@ public class ControlElement {
 
                 if (toggleSwitch) {
                     selected = !selected;
-                    inputControlsView.invalidate();
                 }
+                pressed = false;
+                inputControlsView.invalidate();
             }
             else if (type == Type.RANGE_BUTTON || type == Type.D_PAD || type == Type.STICK || type == Type.TRACKPAD) {
                 for (byte i = 0; i < states.length; i++) {
@@ -786,7 +857,6 @@ public class ControlElement {
             currentPosition = new PointF();
         }
         currentPosition.set(x, y);
-        // Optionally invalidate the view to trigger a redraw
         inputControlsView.invalidate();
     }
 }

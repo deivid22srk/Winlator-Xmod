@@ -641,6 +641,34 @@
                         android:max="100"
                         android:progress="66" />
 
+                    <!-- About Button -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@android:color/darker_gray"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginBottom="10dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="About"
+                        android:textColor="@android:color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:padding="8dp" />
+
+                    <Button
+                        android:id="@+id/aboutButton"
+                        android:layout_width="200dp"
+                        android:layout_height="48dp"
+                        android:text="About Winlator"
+                        android:textColor="@android:color/white"
+                        android:background="@drawable/button_background"
+                        android:layout_marginTop="8dp"
+                        android:focusable="true"
+                        android:focusableInTouchMode="true" />
+
 
                 </LinearLayout>
 

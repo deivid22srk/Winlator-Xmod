@@ -7,38 +7,30 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.Settings;
 import android.text.Html;
-import android.text.SpannableString;
-import android.text.method.LinkMovementMethod;
-import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.text.method.LinkMovementMethod;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.view.GravityCompat;
-import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.preference.PreferenceManager;
 
-import com.google.android.material.navigation.NavigationView;
-import com.winlator.xmod.R;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.winlator.xmod.contentdialog.ContentDialog;
-import com.winlator.xmod.core.Callback;
 import com.winlator.xmod.core.ImageUtils;
 import com.winlator.xmod.core.PreloaderDialog;
 import com.winlator.xmod.container.ContainerManager;
@@ -48,14 +40,13 @@ import com.winlator.xmod.xenvironment.ImageFsInstaller;
 import java.io.File;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+public class MainActivity extends AppCompatActivity {
     public static final @IntRange(from = 1, to = 19) byte CONTAINER_PATTERN_COMPRESSION_LEVEL = 9;
     public static final byte PERMISSION_WRITE_EXTERNAL_STORAGE_REQUEST_CODE = 1;
     public static final byte OPEN_FILE_REQUEST_CODE = 2;
     public static final byte EDIT_INPUT_CONTROLS_REQUEST_CODE = 3;
     public static final byte OPEN_DIRECTORY_REQUEST_CODE = 4;
     public static final byte OPEN_IMAGE_REQUEST_CODE = 5;
-    private DrawerLayout drawerLayout;
     public final PreloaderDialog preloaderDialog = new PreloaderDialog(this);
     private boolean editInputControls = false;
     private int selectedProfileId;
@@ -64,54 +55,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private boolean isDarkMode;
 
-//    private void cleanupErroneousContainer() {
-//        // Define the specific path to the erroneous directory
-//        File erroneousDir = new File(Environment.getExternalStorageDirectory(), "Android/data/com.winlator/files/Backups");
-//
-//        // Log the contents of the directory
-//        logSpecificDirectoryContents(erroneousDir);
-//
-//        // Check if the directory exists and delete it if found
-//        if (erroneousDir.exists() && erroneousDir.isDirectory()) {
-//            if (FileUtils.delete(erroneousDir)) {
-//                Log.i("MainActivity", "Successfully deleted erroneous container directory: " + erroneousDir.getPath());
-//                Toast.makeText(this, "Erroneous container directory deleted.", Toast.LENGTH_SHORT).show();
-//            } else {
-//                Log.e("MainActivity", "Failed to delete erroneous container directory: " + erroneousDir.getPath());
-//                Toast.makeText(this, "Failed to delete erroneous container directory.", Toast.LENGTH_SHORT).show();
-//            }
-//        } else {
-//            Log.i("MainActivity", "Erroneous container directory not found: " + erroneousDir.getPath());
-//            Toast.makeText(this, "Erroneous container directory not found.", Toast.LENGTH_SHORT).show();
-//        }
-//    }
-//
-//    // Method to log the contents of a specific directory
-//    private void logSpecificDirectoryContents(File directory) {
-//        if (directory == null || !directory.isDirectory()) {
-//            Log.e("MainActivity", "Provided path is not a directory: " + directory);
-//            return;
-//        }
-//
-//        Log.d("MainActivity", "Contents of directory: " + directory.getAbsolutePath());
-//        File[] files = directory.listFiles();
-//        if (files != null) {
-//            for (File file : files) {
-//                Log.d("MainActivity", (file.isDirectory() ? "Directory: " : "File: ") + file.getName());
-//            }
-//        } else {
-//            Log.d("MainActivity", "No files found in directory: " + directory.getAbsolutePath());
-//        }
-//    }
-
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-
-//        cleanupErroneousContainer();
 
         // Get shared preferences
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -136,12 +82,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             setTheme(R.style.AppTheme);
         }
 
-
         setContentView(R.layout.main_activity);
-
-        drawerLayout = findViewById(R.id.DrawerLayout);
-        NavigationView navigationView = findViewById(R.id.NavigationView);
-        navigationView.setNavigationItemSelectedListener(this);
 
         setSupportActionBar(findViewById(R.id.Toolbar));
         ActionBar actionBar = getSupportActionBar();
@@ -150,27 +91,27 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             actionBar.setHomeAsUpIndicator(R.drawable.icon_action_bar_menu);
         }
 
-        // Determine text color based on dark mode
-        int textColor = isDarkMode ? Color.WHITE : Color.BLACK;
-        setNavigationViewItemTextColor(navigationView, textColor);
-        
-
         containerManager = new ContainerManager(this);
+
+        BottomNavigationView bottomNavigation = findViewById(R.id.BottomNavigation);
+        if (bottomNavigation != null) {
+            bottomNavigation.setOnItemSelectedListener(item -> {
+                onNavigationItemSelectedSafe(item);
+                return true;
+            });
+        }
 
         Intent intent = getIntent();
         editInputControls = intent.getBooleanExtra("edit_input_controls", false);
         if (editInputControls) {
             selectedProfileId = intent.getIntExtra("selected_profile_id", 0);
-            actionBar.setHomeAsUpIndicator(R.drawable.icon_action_bar_back);
-            onNavigationItemSelected(navigationView.getMenu().findItem(R.id.main_menu_input_controls));
-            navigationView.setCheckedItem(R.id.main_menu_input_controls);
+            if (actionBar != null) actionBar.setHomeAsUpIndicator(R.drawable.icon_action_bar_back);
+            show(new InputControlsFragment(selectedProfileId), false);
         } else {
             int selectedMenuItemId = intent.getIntExtra("selected_menu_item_id", 0);
-            int menuItemId = selectedMenuItemId > 0 ? selectedMenuItemId : R.id.main_menu_containers;
-
-            actionBar.setHomeAsUpIndicator(R.drawable.icon_action_bar_menu);
-            onNavigationItemSelected(navigationView.getMenu().findItem(menuItemId));
-            navigationView.setCheckedItem(menuItemId);
+            int menuItemId = selectedMenuItemId > 0 ? selectedMenuItemId : R.id.main_menu_shortcuts; // Shortcuts as default
+            if (actionBar != null) actionBar.setHomeAsUpIndicator(R.drawable.icon_action_bar_menu);
+            bottomNavigation.setSelectedItemId(menuItemId);
 
             if (!requestAppPermissions()) {
                 ImageFsInstaller.installIfNeeded(this);
@@ -240,34 +181,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public boolean onOptionsItemSelected(MenuItem menuItem) {
         if (menuItem.getItemId() == android.R.id.home) {
-            // Toggle the drawer
-            if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-                drawerLayout.closeDrawer(GravityCompat.START);
-            } else {
-                drawerLayout.openDrawer(GravityCompat.START);
-            }
+            if (editInputControls) onBackPressed();
             return true;
         } else {
             return super.onOptionsItemSelected(menuItem);
         }
     }
 
-    public void toggleDrawer() {
-        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
-            drawerLayout.closeDrawer(GravityCompat.START);
-        } else {
-            drawerLayout.openDrawer(GravityCompat.START);
-        }
-    }
-
-    @Override
-    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+    private boolean onNavigationItemSelectedSafe(MenuItem item) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         if (fragmentManager.getBackStackEntryCount() > 0) {
             fragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         }
 
-        switch (item.getItemId()) {
+        int id = (item != null) ? item.getItemId() : R.id.main_menu_shortcuts;
+        switch (id) {
             case R.id.main_menu_shortcuts:
                 show(new ShortcutsFragment(), false);  // Forward animation
                 break;
@@ -293,15 +221,31 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         return true;
     }
 
-
-//    private void show(Fragment fragment) {
-//        FragmentManager fragmentManager = getSupportFragmentManager();
-//        fragmentManager.beginTransaction()
-//                .replace(R.id.FLFragmentContainer, fragment)
-//                .commit();
-//
-//        drawerLayout.closeDrawer(GravityCompat.START);
-//    }
+    public void navigateToMenu(int id) {
+        switch (id) {
+            case R.id.main_menu_shortcuts:
+                show(new ShortcutsFragment(), false);
+                break;
+            case R.id.main_menu_containers:
+                show(new ContainersFragment(), false);
+                break;
+            case R.id.main_menu_input_controls:
+                show(new InputControlsFragment(selectedProfileId), false);
+                break;
+            case R.id.main_menu_contents:
+                show(new ContentsFragment(), false);
+                break;
+            case R.id.main_menu_adrenotools_gpu_drivers:
+                show(new AdrenotoolsFragment(), false);
+                break;
+            case R.id.main_menu_settings:
+                show(new SettingsFragment(), false);
+                break;
+            case R.id.main_menu_about:
+                showAboutDialog();
+                break;
+        }
+    }
 
     private void show(Fragment fragment, boolean reverse) {
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -316,8 +260,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     .replace(R.id.FLFragmentContainer, fragment)
                     .commit();
         }
-
-        drawerLayout.closeDrawer(GravityCompat.START);
     }
 
     private void showAboutDialog() {
@@ -370,27 +312,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         dialog.show();
-    }
-
-    private void setNavigationViewItemTextColor(NavigationView navigationView, int color) {
-        for (int i = 0; i < navigationView.getMenu().size(); i++) {
-            MenuItem menuItem = navigationView.getMenu().getItem(i);
-            setMenuItemTextColor(menuItem, color);
-
-            // If the menu item has sub-items, iterate through them
-            if (menuItem.hasSubMenu()) {
-                for (int j = 0; j < menuItem.getSubMenu().size(); j++) {
-                    MenuItem subMenuItem = menuItem.getSubMenu().getItem(j);
-                    setMenuItemTextColor(subMenuItem, color);
-                }
-            }
-        }
-    }
-
-    private void setMenuItemTextColor(MenuItem menuItem, int color) {
-        SpannableString spanString = new SpannableString(menuItem.getTitle());
-        spanString.setSpan(new ForegroundColorSpan(color), 0, spanString.length(), 0);
-        menuItem.setTitle(spanString);
     }
 
     @Override

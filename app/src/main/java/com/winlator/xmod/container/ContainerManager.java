@@ -340,12 +340,23 @@ public class ContainerManager {
 
     public boolean extractContainerPatternFile(Container container, String wineVersion, ContentsManager contentsManager, File containerDir, OnExtractFileListener onExtractFileListener) {
         WineInfo wineInfo = WineInfo.fromIdentifier(context, contentsManager, wineVersion);
-        String containerPattern = wineVersion + "_container_pattern.tzst";
-        boolean result = TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, context, containerPattern, containerDir, onExtractFileListener);
 
+        // Prefer installed prefix pack when the wineVersion points to an installed profile
+        boolean result = false;
+        ContentProfile profile = contentsManager.getProfileByEntryName(wineVersion);
+        if (profile != null && (profile.type == ContentProfile.ContentType.CONTENT_TYPE_WINE || profile.type == ContentProfile.ContentType.CONTENT_TYPE_PROTON)) {
+            File installedPrefix = new File(wineInfo.path + "/prefixPack.txz");
+            result = TarCompressorUtils.extract(TarCompressorUtils.Type.XZ, installedPrefix, containerDir);
+        }
+
+        // Fallback to built-in asset naming if not installed or extraction failed
         if (!result) {
-            File containerPatternFile = new File(wineInfo.path + "/prefixPack.txz");
-            result = TarCompressorUtils.extract(TarCompressorUtils.Type.XZ, containerPatternFile, containerDir);
+            String containerPattern = wineVersion + "_container_pattern.tzst";
+            result = TarCompressorUtils.extract(TarCompressorUtils.Type.ZSTD, context, containerPattern, containerDir, onExtractFileListener);
+            if (!result) {
+                File containerPatternFile = new File(wineInfo.path + "/prefixPack.txz");
+                result = TarCompressorUtils.extract(TarCompressorUtils.Type.XZ, containerPatternFile, containerDir);
+            }
         }
 
         if (result) {

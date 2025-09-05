@@ -43,6 +43,7 @@ import com.winlator.xmod.contentdialog.DXVKConfigDialog;
 import com.winlator.xmod.contentdialog.GraphicsDriverConfigDialog;
 import com.winlator.xmod.contentdialog.ShortcutSettingsDialog;
 import com.winlator.xmod.contentdialog.VKD3DConfigDialog;
+import com.winlator.xmod.contentdialog.CombinedDXVKVKD3DConfigDialog;
 import com.winlator.xmod.contents.ContentProfile;
 import com.winlator.xmod.contents.ContentsManager;
 import com.winlator.xmod.core.AppUtils;
@@ -891,6 +892,10 @@ public class ContainerDetailFragment extends Fragment {
                 }
                 else if (dxwrapper.equals("vkd3d")) {
                     vDXWrapperConfig.setOnClickListener((v) -> (new VKD3DConfigDialog(vDXWrapperConfig)).show());
+                    vDXWrapperConfig.setVisibility(View.VISIBLE);
+                }
+                else if (dxwrapper.equals("unified")) {
+                    vDXWrapperConfig.setOnClickListener((v) -> (new CombinedDXVKVKD3DConfigDialog(vDXWrapperConfig, isARM64EC)).show());
                     vDXWrapperConfig.setVisibility(View.VISIBLE);
                 } else vDXWrapperConfig.setVisibility(View.GONE);
             }

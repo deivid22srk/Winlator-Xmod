@@ -330,6 +330,10 @@
     <string name="select_settings_file_to_import">Select settings file to import</string>
     <string name="no_valid_settings_file_found">No valid settings file found</string>
     <string name="invalid_settings_file">Invalid settings file</string>
+    <string name="include_contents">Include contents</string>
+    <string name="export_with_contents_desc">Export shortcut settings. Optionally include installed contents used by this shortcut (Wine/Proton, DXVK/VKD3D, drivers).</string>
+    <string name="package_exported_to">Package exported to</string>
+    <string name="exporting_settings">Exporting settings…</string>
     <string name="change_cover_art">Change Cover Art</string>
     <string name="select_image_source">Select Image Source</string>
     <string name="camera">Camera</string>
@@ -394,6 +398,7 @@
     <string name="name_required">Name is required</string>
     <string name="exporting_save">Exporting save...</string>
     <string name="importing_save">Importing save...</string>
+    <string name="importing_settings">Importing settings…</string>
     <string name="_copy">copy</string>
     <string name="backing_up_data">Backing up data...</string>
     <string name="restoring_data">Restoring data...</string>
@@ -668,4 +673,5 @@ E.g. <b>META</b> for <i>META key</i>, \n
     <string name="trigger_mode">Trigger Mode</string>
     <string name="use_glibc">Use Glibc</string>
     
+    <string name="enter_target_path">Enter target path</string>
 </resources>

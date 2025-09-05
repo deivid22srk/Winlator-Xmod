@@ -324,6 +324,9 @@ public class InputControlsView extends View {
             deselectAllElements();
         }
         else this.profile = null;
+        if (xServer != null && xServer.getWinHandler() != null) {
+            xServer.getWinHandler().sendGamepadState();
+        }
     }
 
     public boolean isShowTouchscreenControls() {
@@ -332,6 +335,9 @@ public class InputControlsView extends View {
 
     public void setShowTouchscreenControls(boolean showTouchscreenControls) {
         this.showTouchscreenControls = showTouchscreenControls;
+        if (xServer != null && xServer.getWinHandler() != null) {
+            xServer.getWinHandler().sendGamepadState();
+        }
     }
 
     public int getPrimaryColor() {

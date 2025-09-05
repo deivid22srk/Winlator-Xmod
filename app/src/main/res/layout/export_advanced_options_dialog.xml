@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Choose which contents to include:"
+        android:textSize="14sp"
+        android:layout_marginBottom="8dp"/>
+
+    <CheckBox
+        android:id="@+id/CBAdvWine"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Wine/Proton"
+        android:checked="false"
+        android:enabled="false"/>
+
+    <CheckBox
+        android:id="@+id/CBAdvDXVK"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DXVK"
+        android:checked="true"/>
+
+    <CheckBox
+        android:id="@+id/CBAdvVKD3D"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="VKD3D"
+        android:checked="true"/>
+
+    <CheckBox
+        android:id="@+id/CBAdvBox64"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Box64"
+        android:checked="true"/>
+
+    <CheckBox
+        android:id="@+id/CBAdvWOWBox64"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="WOWBox64"
+        android:checked="true"/>
+
+    <CheckBox
+        android:id="@+id/CBAdvFEXCore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="FEXCore"
+        android:checked="true"/>
+
+    <CheckBox
+        android:id="@+id/CBAdvAdrenotools"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Adrenotools driver"
+        android:checked="true"/>
+
+</LinearLayout>

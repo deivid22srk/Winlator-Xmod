@@ -61,6 +61,21 @@ public class VKD3DConfigDialog extends ContentDialog {
 
     public static void setEnvVars(Context context, KeyValueSet config, EnvVars envVars) {
         envVars.put("VKD3D_FEATURE_LEVEL", config.get("vkd3dLevel"));
+        
+        // Enhanced VKD3D configuration for better DirectX 12 compatibility
+        envVars.put("VKD3D_CONFIG", "force_host_cached,allow_invalid_descriptors");
+        envVars.put("VKD3D_DEBUG", "none"); // Disable debug output for performance
+        envVars.put("VKD3D_SHADER_MODEL", "6_6"); // Enable highest shader model support
+        envVars.put("VKD3D_DISABLE_EXTENSIONS", ""); // Enable all extensions
+        envVars.put("VKD3D_VULKAN_DEVICE", "-1"); // Auto-detect best GPU
+        
+        // Force DirectX 12 availability reporting 
+        envVars.put("DXVK_HUD", "0"); // Disable HUD to avoid interference
+        envVars.put("VKD3D_LOG_LEVEL", "warn"); // Reduce log verbosity
+        
+        // Specific workarounds for Hell Is Us and similar games
+        envVars.put("WINE_DO_NOT_CREATE_DXGI_DEVICE_MANAGER", "0");
+        envVars.put("VKD3D_FORCE_D3D12", "1"); // Force DX12 detection
     }
 
     // Method to load versions into the VKD3D version spinner

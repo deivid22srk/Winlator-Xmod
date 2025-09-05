@@ -32,6 +32,10 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.documentfile.provider.DocumentFile;
@@ -55,6 +59,7 @@ import com.winlator.xmod.container.Container;
 import com.winlator.xmod.container.ContainerManager;
 import com.winlator.xmod.container.Shortcut;
 import com.winlator.xmod.core.FileUtils;
+import com.winlator.xmod.contentdialog.ContentDialog;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -574,6 +579,10 @@ public class BigPictureActivity extends AppCompatActivity {
                 showSettingsView();
             }
         });
+
+        // Find and setup the About button
+        Button aboutButton = findViewById(R.id.aboutButton);
+        aboutButton.setOnClickListener(v -> showAboutDialog());
 
 
         coverArtView = findViewById(R.id.IVCoverArt);
@@ -1679,6 +1688,59 @@ public class BigPictureActivity extends AppCompatActivity {
         }
     }
 
+    private void showAboutDialog() {
+        ContentDialog dialog = new ContentDialog(this, R.layout.about_dialog);
+        dialog.findViewById(R.id.LLBottomBar).setVisibility(View.GONE);
 
+        // Check if dark mode is enabled (you might need to adjust this based on your theme logic)
+        boolean isDarkMode = true; // Adjust this based on your dark mode detection logic
+
+        if (isDarkMode) {
+            dialog.getWindow().setBackgroundDrawableResource(R.drawable.content_dialog_background_dark);
+        } else {
+            dialog.getWindow().setBackgroundDrawableResource(R.drawable.content_dialog_background);
+        }
+
+        try {
+            final PackageInfo pInfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+
+            TextView tvWebpage = dialog.findViewById(R.id.TVWebpage);
+            tvWebpage.setText(Html.fromHtml("<a href=\"https://www.winlator.org\">winlator.org</a>", Html.FROM_HTML_MODE_LEGACY));
+            tvWebpage.setMovementMethod(LinkMovementMethod.getInstance());
+
+            ((TextView) dialog.findViewById(R.id.TVAppVersion)).setText(getString(R.string.version) + " " + pInfo.versionName);
+
+            String creditsAndThirdPartyAppsHTML = String.join("<br />",
+                    "Winlator Xmod Fork By: <a href=\"https://youtube.com/@hail-games\">HailGames</a>",
+                    "Winlator Cmod by coffincolors (<a href=\"https://github.com/coffincolors/winlator\">Fork</a>)",
+                    "Big Picture Mode Music by",
+                    "Dale Melvin Blevens III (Fumer)",
+                    "---",
+                    "Ubuntu RootFs (<a href=\"https://releases.ubuntu.com/focal\">Focal Fossa</a>)",
+                    "Wine (<a href=\"https://www.winehq.org\">winehq.org</a>)",
+                    "Box64 by <a href=\"https://github.com/ptitSeb\">ptitseb</a>",
+                    "PRoot (<a href=\"https://proot-me.github.io\">proot-me.github.io</a>)",
+                    "Mesa (Turnip/Zink/VirGL) (<a href=\"https://www.mesa3d.org\">mesa3d.org</a>)",
+                    "DXVK (<a href=\"https://github.com/doitsujin/dxvk\">github.com/doitsujin/dxvk</a>)",
+                    "VKD3D (<a href=\"https://gitlab.winehq.org/wine/vkd3d\">gitlab.winehq.org/wine/vkd3d</a>)",
+                    "D8VK (<a href=\"https://github.com/AlpyneDreams/d8vk\">github.com/AlpyneDreams/d8vk</a>)",
+                    "CNC DDraw (<a href=\"https://github.com/FunkyFr3sh/cnc-ddraw\">github.com/FunkyFr3sh/cnc-ddraw</a>)"
+            );
+
+            TextView tvCreditsAndThirdPartyApps = dialog.findViewById(R.id.TVCreditsAndThirdPartyApps);
+            tvCreditsAndThirdPartyApps.setText(Html.fromHtml(creditsAndThirdPartyAppsHTML, Html.FROM_HTML_MODE_LEGACY));
+            tvCreditsAndThirdPartyApps.setMovementMethod(LinkMovementMethod.getInstance());
+
+            String glibcExpVersionForkHTML = String.join("<br />",
+                    "longjunyu2's <a href=\"https://github.com/longjunyu2/winlator/tree/use-glibc-instead-of-proot\">(Fork)</a>");
+            TextView tvGlibcExpVersionFork = dialog.findViewById(R.id.TVGlibcExpVersionFork);
+            tvGlibcExpVersionFork.setText(Html.fromHtml(glibcExpVersionForkHTML, Html.FROM_HTML_MODE_LEGACY));
+            tvGlibcExpVersionFork.setMovementMethod(LinkMovementMethod.getInstance());
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        dialog.show();
+    }
 
 }

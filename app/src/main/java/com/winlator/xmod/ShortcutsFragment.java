@@ -27,6 +27,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
@@ -55,6 +56,8 @@ import com.winlator.xmod.contentdialog.FilePickerDialog;
 import com.winlator.xmod.contentdialog.ShortcutSettingsDialog;
 import com.winlator.xmod.core.FileUtils;
 import com.winlator.xmod.core.ShortcutConfigManager;
+import com.winlator.xmod.core.PreloaderDialog;
+import com.winlator.xmod.core.ShortcutPackageManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -74,9 +77,17 @@ public class ShortcutsFragment extends Fragment {
     private static final int REQUEST_CAMERA_PERMISSION = 1003;
     private static final int REQUEST_FILE_PICKER = 1004;
     private static final int REQUEST_EXECUTABLE_PICKER = 1005;
+    private static final int REQUEST_NEW_SHORTCUT_COVER = 1010;
+    private static final int REQUEST_ADD_INJECTION_FILE = 1101;
+    private static final int REQUEST_ADD_INJECTION_FOLDER = 1102;
     private Shortcut currentShortcutForCover;
     private Shortcut currentShortcutForImport;
+    private com.winlator.xmod.core.ShortcutPackageManager.ExportOptions pendingExportOptions;
+    private boolean pendingInjectionIsDir;
     private Container selectedContainer;
+
+    private android.graphics.Bitmap pendingCoverBitmap;
+    private android.widget.ImageView pendingCoverPreview;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -240,7 +251,7 @@ public class ShortcutsFragment extends Fragment {
                     exportShortcutToFrontend(shortcut);
                 }
                 else if (itemId == R.id.shortcut_export_settings) {
-                    exportShortcutSettings(shortcut);
+                    exportShortcutSettingsAsync(shortcut);
                 }
                 else if (itemId == R.id.shortcut_import_settings) {
                     importShortcutSettings(shortcut);
@@ -440,16 +451,157 @@ public class ShortcutsFragment extends Fragment {
         }
 
         private void exportShortcutSettings(Shortcut shortcut) {
-            File exportedFile = ShortcutConfigManager.exportShortcutSettings(shortcut, getContext());
-            if (exportedFile != null) {
-                Toast.makeText(getContext(), 
-                    getString(R.string.shortcut_settings_exported) + "\n" + exportedFile.getAbsolutePath(), 
-                    Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(getContext(), 
-                    getString(R.string.failed_to_export_shortcut_settings), 
-                    Toast.LENGTH_SHORT).show();
+            ContentDialog dialog = new ContentDialog(getContext(), R.layout.export_settings_dialog);
+            dialog.setTitle(getString(R.string.export_shortcut_settings));
+            dialog.setIcon(R.drawable.icon_settings);
+            CheckBox cbInclude = dialog.findViewById(R.id.CBIncludeContents);
+            View btAdvanced = dialog.findViewById(R.id.BTAdvanced);
+            View btAddInjection = dialog.findViewById(R.id.BTAddInjection);
+            final com.winlator.xmod.core.ShortcutPackageManager.ExportOptions exportOptions = new com.winlator.xmod.core.ShortcutPackageManager.ExportOptions();
+exportOptions.includeWine = false;
+
+            if (btAdvanced != null) btAdvanced.setVisibility(cbInclude != null && cbInclude.isChecked() ? View.VISIBLE : View.GONE);
+            if (cbInclude != null) {
+                cbInclude.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                    if (btAdvanced != null) btAdvanced.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                });
             }
+            if (btAddInjection != null) {
+                btAddInjection.setOnClickListener(v -> {
+                    String[] items = new String[]{"Add file","Add folder"};
+                    ContentDialog.showSingleChoiceList(getContext(), R.string.export_shortcut_settings, items, (which) -> {
+                        if (which == 0) {
+                            pendingExportOptions = exportOptions;
+                            pendingInjectionIsDir = false;
+                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                            intent.addCategory(Intent.CATEGORY_OPENABLE);
+                            intent.setType("*/*");
+                            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            startActivityForResult(Intent.createChooser(intent, "Select file to inject"), REQUEST_ADD_INJECTION_FILE);
+                        } else if (which == 1) {
+                            pendingExportOptions = exportOptions;
+                            pendingInjectionIsDir = true;
+                            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                            startActivityForResult(intent, REQUEST_ADD_INJECTION_FOLDER);
+                        }
+                    });
+                });
+            }
+            if (btAdvanced != null) {
+                btAdvanced.setOnClickListener(v -> {
+                    ContentDialog adv = new ContentDialog(getContext(), R.layout.export_advanced_options_dialog);
+                    adv.setTitle("Advanced export options");
+                    adv.setOnConfirmCallback(() -> {
+                        CheckBox w = adv.findViewById(R.id.CBAdvWine);
+                        CheckBox dxvk = adv.findViewById(R.id.CBAdvDXVK);
+                        CheckBox vkd3d = adv.findViewById(R.id.CBAdvVKD3D);
+                        CheckBox box64 = adv.findViewById(R.id.CBAdvBox64);
+                        CheckBox wow = adv.findViewById(R.id.CBAdvWOWBox64);
+                        CheckBox fex = adv.findViewById(R.id.CBAdvFEXCore);
+                        CheckBox adr = adv.findViewById(R.id.CBAdvAdrenotools);
+                        if (w != null) { w.setChecked(false); w.setEnabled(false); exportOptions.includeWine = false; }
+                        if (dxvk != null) exportOptions.includeDXVK = dxvk.isChecked();
+                        if (vkd3d != null) exportOptions.includeVKD3D = vkd3d.isChecked();
+                        if (box64 != null) exportOptions.includeBox64 = box64.isChecked();
+                        if (wow != null) exportOptions.includeWOWBox64 = wow.isChecked();
+                        if (fex != null) exportOptions.includeFEXCore = fex.isChecked();
+                        if (adr != null) exportOptions.includeAdrenotools = adr.isChecked();
+                    });
+                    adv.show();
+                });
+            }
+
+            dialog.setOnConfirmCallback(() -> {
+                boolean includeContents = cbInclude != null && cbInclude.isChecked();
+                File exportedFile = includeContents
+                        ? com.winlator.xmod.core.ShortcutPackageManager.exportShortcutSettings(shortcut, getContext(), exportOptions)
+                        : com.winlator.xmod.core.ShortcutConfigManager.exportShortcutSettings(shortcut, getContext());
+                if (exportedFile != null) {
+                    String msg = includeContents ? (getString(R.string.package_exported_to) + "\n" + exportedFile.getAbsolutePath())
+                                                 : (getString(R.string.shortcut_settings_exported) + "\n" + exportedFile.getAbsolutePath());
+                    Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
+                } else {
+                    Toast.makeText(getContext(), getString(R.string.failed_to_export_shortcut_settings), Toast.LENGTH_SHORT).show();
+                }
+            });
+            dialog.show();
+        }
+
+        private void exportShortcutSettingsAsync(Shortcut shortcut) {
+            ContentDialog dialog = new ContentDialog(getContext(), R.layout.export_settings_dialog);
+            dialog.setTitle(getString(R.string.export_shortcut_settings));
+            dialog.setIcon(R.drawable.icon_settings);
+            CheckBox cbInclude = dialog.findViewById(R.id.CBIncludeContents);
+            View btAdvanced = dialog.findViewById(R.id.BTAdvanced);
+            View btAddInjection = dialog.findViewById(R.id.BTAddInjection);
+            final com.winlator.xmod.core.ShortcutPackageManager.ExportOptions exportOptions = new com.winlator.xmod.core.ShortcutPackageManager.ExportOptions();
+exportOptions.includeWine = false;
+            if (btAdvanced != null) btAdvanced.setVisibility(cbInclude != null && cbInclude.isChecked() ? View.VISIBLE : View.GONE);
+            if (cbInclude != null) cbInclude.setOnCheckedChangeListener((b, checked) -> { if (btAdvanced != null) btAdvanced.setVisibility(checked ? View.VISIBLE : View.GONE); });
+            if (btAddInjection != null) btAddInjection.setOnClickListener(v -> {
+                String[] items = new String[]{"Add file","Add folder"};
+                ContentDialog.showSingleChoiceList(getContext(), R.string.export_shortcut_settings, items, (which) -> {
+                    if (which == 0) {
+                        pendingExportOptions = exportOptions;
+                        pendingInjectionIsDir = false;
+                        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("*/*");
+                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivityForResult(Intent.createChooser(intent, "Select file to inject"), REQUEST_ADD_INJECTION_FILE);
+                    } else if (which == 1) {
+                        pendingExportOptions = exportOptions;
+                        pendingInjectionIsDir = true;
+                        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+                        startActivityForResult(intent, REQUEST_ADD_INJECTION_FOLDER);
+                    }
+                });
+            });
+            if (btAdvanced != null) btAdvanced.setOnClickListener(v -> {
+                ContentDialog adv = new ContentDialog(getContext(), R.layout.export_advanced_options_dialog);
+                adv.setTitle("Advanced export options");
+                adv.setOnConfirmCallback(() -> {
+                    CheckBox w = adv.findViewById(R.id.CBAdvWine);
+                    CheckBox dxvk = adv.findViewById(R.id.CBAdvDXVK);
+                    CheckBox vkd3d = adv.findViewById(R.id.CBAdvVKD3D);
+                    CheckBox box64 = adv.findViewById(R.id.CBAdvBox64);
+                    CheckBox wow = adv.findViewById(R.id.CBAdvWOWBox64);
+                    CheckBox fex = adv.findViewById(R.id.CBAdvFEXCore);
+                    CheckBox adr = adv.findViewById(R.id.CBAdvAdrenotools);
+                    if (w != null) { w.setChecked(false); w.setEnabled(false); exportOptions.includeWine = false; }
+                    if (dxvk != null) exportOptions.includeDXVK = dxvk.isChecked();
+                    if (vkd3d != null) exportOptions.includeVKD3D = vkd3d.isChecked();
+                    if (box64 != null) exportOptions.includeBox64 = box64.isChecked();
+                    if (wow != null) exportOptions.includeWOWBox64 = wow.isChecked();
+                    if (fex != null) exportOptions.includeFEXCore = fex.isChecked();
+                    if (adr != null) exportOptions.includeAdrenotools = adr.isChecked();
+                });
+                adv.show();
+            });
+            dialog.setOnConfirmCallback(() -> {
+                boolean includeContents = cbInclude != null && cbInclude.isChecked();
+                Activity activity = getActivity();
+                if (activity == null) return;
+                PreloaderDialog preloader = new PreloaderDialog(activity);
+                preloader.showOnUiThread(R.string.exporting_settings);
+                new Thread(() -> {
+                    File exportedFile = includeContents
+                            ? com.winlator.xmod.core.ShortcutPackageManager.exportShortcutSettings(shortcut, getContext(), exportOptions)
+                            : com.winlator.xmod.core.ShortcutConfigManager.exportShortcutSettings(shortcut, getContext());
+                    activity.runOnUiThread(() -> {
+                        preloader.close();
+                        if (exportedFile != null) {
+                            String msg = includeContents
+                                    ? (getString(R.string.package_exported_to) + "\n" + exportedFile.getAbsolutePath())
+                                    : (getString(R.string.shortcut_settings_exported) + "\n" + exportedFile.getAbsolutePath());
+                            Toast.makeText(getContext(), msg, Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(getContext(), getString(R.string.failed_to_export_shortcut_settings), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }).start();
+            });
+            dialog.show();
         }
 
         private void importShortcutSettings(Shortcut shortcut) {
@@ -570,6 +722,7 @@ public class ShortcutsFragment extends Fragment {
         String[] mimeTypes = {"application/json", "text/plain", "*/*"};
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         
         // Add extra to suggest file types
         intent.putExtra(Intent.EXTRA_TITLE, "Select Winlator Shortcut Config (.wsc)");
@@ -591,29 +744,39 @@ public class ShortcutsFragment extends Fragment {
                 Uri fileUri = data.getData();
                 if (fileUri != null) {
                     try {
-                        // Validate if it's a valid config file using URI directly
-                        if (ShortcutConfigManager.isValidConfigFile(fileUri, getContext())) {
-                            String originalName = ShortcutConfigManager.getShortcutNameFromConfigFile(fileUri, getContext());
-                            
-                            // Confirm import
-                            ContentDialog.confirm(getContext(), 
-                                "Import settings from \"" + originalName + "\"?\n\nThis will overwrite current settings for \"" + currentShortcutForImport.name + "\".",
-                                () -> {
-                                    boolean success = ShortcutConfigManager.importShortcutSettings(currentShortcutForImport, fileUri, getContext());
-                                    if (success) {
-                                        Toast.makeText(getContext(), 
-                                            getString(R.string.shortcut_settings_imported), 
-                                            Toast.LENGTH_SHORT).show();
-                                        loadShortcutsList(); // Refresh the list in case any display settings changed
-                                    } else {
-                                        Toast.makeText(getContext(), 
-                                            getString(R.string.failed_to_import_shortcut_settings), 
-                                            Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                        } else {
-                            Toast.makeText(getContext(), getString(R.string.invalid_settings_file), Toast.LENGTH_SHORT).show();
-                        }
+                        // Validate off main thread, then import with progress
+                        final Shortcut target = currentShortcutForImport;
+                        currentShortcutForImport = null;
+                        Activity activity = getActivity();
+                        if (activity == null) return;
+                        new Thread(() -> {
+                            boolean valid = ShortcutPackageManager.isValid(fileUri, getContext());
+                            String originalName = valid ? ShortcutPackageManager.getName(fileUri, getContext()) : null;
+                            activity.runOnUiThread(() -> {
+                                if (!valid) {
+                                    Toast.makeText(getContext(), getString(R.string.invalid_settings_file), Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                ContentDialog.confirm(getContext(),
+                                        "Import settings from \"" + originalName + "\"?\n\nThis will overwrite current settings for \"" + target.name + "\".",
+                                        () -> {
+                                            PreloaderDialog preloader = new PreloaderDialog(activity);
+                                            preloader.showOnUiThread(R.string.importing_settings);
+                                            new Thread(() -> {
+                                                boolean success = ShortcutPackageManager.importFromUri(target, fileUri, getContext());
+                                                activity.runOnUiThread(() -> {
+                                                    preloader.close();
+                                                    if (success) {
+                                                        Toast.makeText(getContext(), getString(R.string.shortcut_settings_imported), Toast.LENGTH_SHORT).show();
+                                                        loadShortcutsList();
+                                                    } else {
+                                                        Toast.makeText(getContext(), getString(R.string.failed_to_import_shortcut_settings), Toast.LENGTH_SHORT).show();
+                                                    }
+                                                });
+                                            }).start();
+                                        });
+                            });
+                        }).start();
                     } catch (Exception e) {
                         Log.e("ShortcutsFragment", "Error processing selected config file", e);
                         Toast.makeText(getContext(), getString(R.string.failed_to_import_shortcut_settings) + ": " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -625,19 +788,57 @@ public class ShortcutsFragment extends Fragment {
                     Toast.makeText(getContext(), "No file selected", Toast.LENGTH_SHORT).show();
                     currentShortcutForImport = null;
                 }
+            } else if (requestCode == REQUEST_NEW_SHORTCUT_COVER) {
+                try {
+                    Bitmap selectedBitmap = null;
+                    if (data != null) {
+                        Uri imageUri = data.getData();
+                        if (imageUri != null) {
+                            selectedBitmap = MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), imageUri);
+                        }
+                    }
+                    if (selectedBitmap != null) {
+                        pendingCoverBitmap = resizeBitmap(selectedBitmap, 512, 512);
+                        if (pendingCoverPreview != null) pendingCoverPreview.setImageBitmap(pendingCoverBitmap);
+                    } else {
+                        Toast.makeText(getContext(), getString(R.string.failed_to_update_cover_art), Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Log.e("ShortcutsFragment", "Error processing selected image for new shortcut", e);
+                }
+            } else if (requestCode == REQUEST_ADD_INJECTION_FILE && data != null && pendingExportOptions != null) {
+                Uri uri = data.getData();
+                if (uri != null) {
+                    String path = com.winlator.xmod.core.FileUtils.getFilePathFromUri(getContext(), uri);
+                    if (path != null && !path.isEmpty()) {
+                        ContentDialog.prompt(getContext(), R.string.enter_target_path, "C:\\", (target) -> {
+                            pendingExportOptions.addInjection(path, target, false);
+                            Toast.makeText(getContext(), "Injection added", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }
+            } else if (requestCode == REQUEST_ADD_INJECTION_FOLDER && data != null && pendingExportOptions != null) {
+                Uri uri = data.getData();
+                if (uri != null) {
+                    String path = com.winlator.xmod.core.FileUtils.getFilePathFromUriUsingSAF(getContext(), uri);
+                    if (path != null && !path.isEmpty()) {
+                        ContentDialog.prompt(getContext(), R.string.enter_target_path, "C:\\", (target) -> {
+                            pendingExportOptions.addInjection(path, target, true);
+                            Toast.makeText(getContext(), "Injection added", Toast.LENGTH_SHORT).show();
+                        });
+                    }
+                }
             } else if (currentShortcutForCover != null) {
-                // Handle cover art selection
+                // Handle cover art selection for existing shortcut
                 try {
                     Bitmap selectedBitmap = null;
                     
                     if (requestCode == REQUEST_IMAGE_GALLERY && data != null) {
-                        // Handle gallery selection
                         Uri imageUri = data.getData();
                         if (imageUri != null) {
                             selectedBitmap = MediaStore.Images.Media.getBitmap(requireContext().getContentResolver(), imageUri);
                         }
                     } else if (requestCode == REQUEST_IMAGE_CAMERA && data != null) {
-                        // Handle camera capture
                         Bundle extras = data.getExtras();
                         if (extras != null) {
                             selectedBitmap = (Bitmap) extras.get("data");
@@ -645,14 +846,9 @@ public class ShortcutsFragment extends Fragment {
                     }
                     
                     if (selectedBitmap != null) {
-                        // Resize bitmap if too large
                         selectedBitmap = resizeBitmap(selectedBitmap, 512, 512);
-                        
-                        // Save the cover art
                         currentShortcutForCover.saveCustomCoverArt(selectedBitmap);
                         Toast.makeText(getContext(), getString(R.string.cover_art_updated), Toast.LENGTH_SHORT).show();
-                        
-                        // Refresh the shortcuts list to show the new cover art
                         loadShortcutsList();
                     } else {
                         Toast.makeText(getContext(), getString(R.string.failed_to_update_cover_art), Toast.LENGTH_SHORT).show();
@@ -793,24 +989,37 @@ public class ShortcutsFragment extends Fragment {
     }
 
     private void showShortcutNameDialog(String executablePath, String defaultName) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle(getString(R.string.shortcut_name));
+        ContentDialog dialog = new ContentDialog(getContext(), R.layout.shortcut_create_dialog);
+        dialog.setTitle(getString(R.string.shortcut_name));
 
-        final EditText input = new EditText(getContext());
-        input.setText(defaultName);
-        input.setSelectAllOnFocus(true);
-        builder.setView(input);
+        final EditText input = dialog.findViewById(R.id.ETShortcutName);
+        final ImageView coverPreview = dialog.findViewById(R.id.IVCoverPreview);
+        final View btChooseCover = dialog.findViewById(R.id.BTChooseCover);
+        final View btRemoveCover = dialog.findViewById(R.id.BTRemoveCover);
 
-        builder.setPositiveButton(getString(R.string.ok), (dialog, which) -> {
-            String shortcutName = input.getText().toString().trim();
-            if (shortcutName.isEmpty()) {
-                shortcutName = defaultName;
-            }
-            createCustomShortcut(shortcutName, executablePath);
+        if (input != null) {
+            input.setText(defaultName);
+            input.setSelectAllOnFocus(true);
+        }
+        if (pendingCoverBitmap != null && coverPreview != null) coverPreview.setImageBitmap(pendingCoverBitmap);
+
+        if (btChooseCover != null) btChooseCover.setOnClickListener(v -> {
+            pendingCoverPreview = coverPreview;
+            Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+            intent.setType("image/*");
+            startActivityForResult(intent, REQUEST_NEW_SHORTCUT_COVER);
+        });
+        if (btRemoveCover != null) btRemoveCover.setOnClickListener(v -> {
+            pendingCoverBitmap = null;
+            if (coverPreview != null) coverPreview.setImageResource(R.drawable.wallpaper);
         });
 
-        builder.setNegativeButton(getString(R.string.cancel), null);
-        builder.show();
+        dialog.setOnConfirmCallback(() -> {
+            String shortcutName = input != null ? input.getText().toString().trim() : defaultName;
+            if (shortcutName.isEmpty()) shortcutName = defaultName;
+            createCustomShortcut(shortcutName, executablePath);
+        });
+        dialog.show();
     }
 
     private void createCustomShortcut(String shortcutName, String executablePath) {
@@ -859,6 +1068,17 @@ public class ShortcutsFragment extends Fragment {
 
             // Write the file
             FileUtils.writeString(shortcutFile, content.toString());
+
+            // Apply pending cover art if selected
+            if (pendingCoverBitmap != null) {
+                try {
+                    com.winlator.xmod.container.Shortcut newShortcut = new com.winlator.xmod.container.Shortcut(selectedContainer, shortcutFile);
+                    android.graphics.Bitmap resized = resizeBitmap(pendingCoverBitmap, 512, 512);
+                    newShortcut.saveCustomCoverArt(resized);
+                } catch (Exception ignore) {}
+                pendingCoverBitmap = null;
+                pendingCoverPreview = null;
+            }
 
             Toast.makeText(getContext(), getString(R.string.shortcut_created_successfully), Toast.LENGTH_SHORT).show();
             loadShortcutsList();

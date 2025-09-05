@@ -68,6 +68,19 @@ public abstract class WineUtils {
             for (String name : direct3dLibs) registryEditor.setStringValue(dllOverridesKey, name, "native,builtin");
             for (String name : xinputLibs) registryEditor.setStringValue(dllOverridesKey, name, "builtin,native");
             if (wineInfo.isArm64EC()) for (String name : opengLibs) registryEditor.setStringValue(dllOverridesKey, name, "native,builtin");
+            
+            // Add DirectX 12 support entries to fix detection issues
+            registryEditor.setDwordValue("Software\\Wine\\Direct3D", "MaxVersionGL", 0x40600); // OpenGL 4.6
+            registryEditor.setDwordValue("Software\\Wine\\Direct3D", "MaxVersionDX", 0xc0000); // DirectX 12
+            registryEditor.setStringValue("Software\\Wine\\Direct3D", "DirectDrawRenderer", "opengl");
+            registryEditor.setDwordValue("Software\\Wine\\Direct3D", "MaxSampleCount", 16);
+            registryEditor.setDwordValue("Software\\Wine\\Direct3D", "render_target_format_blacklist", 0);
+            
+            // Ensure VKD3D is properly configured
+            registryEditor.setStringValue("Software\\Wine\\VKD3D", "api_version", "1.3");
+            registryEditor.setDwordValue("Software\\Wine\\VKD3D", "feature_level", 0xc200); // D3D_FEATURE_LEVEL_12_2
+            registryEditor.setDwordValue("Software\\Wine\\VKD3D", "force_capability", 1);
+            
             setWindowMetrics(registryEditor);
         }
     }

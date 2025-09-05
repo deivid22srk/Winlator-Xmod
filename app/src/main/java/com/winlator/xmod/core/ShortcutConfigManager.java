@@ -5,19 +5,38 @@ import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 
+import com.winlator.xmod.container.Container;
 import com.winlator.xmod.container.Shortcut;
+import com.winlator.xmod.contentdialog.DXVKConfigDialog;
+import com.winlator.xmod.contentdialog.VKD3DConfigDialog;
+import com.winlator.xmod.contentdialog.GraphicsDriverConfigDialog;
+import com.winlator.xmod.contents.AdrenotoolsManager;
+import com.winlator.xmod.contents.ContentProfile;
+import com.winlator.xmod.contents.ContentsManager;
+import com.winlator.xmod.box64.Box64Preset;
+import com.winlator.xmod.box64.Box64PresetManager;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 public class ShortcutConfigManager {
     private static final String TAG = "ShortcutConfigManager";
@@ -32,29 +51,21 @@ public class ShortcutConfigManager {
      */
     public static File exportShortcutSettings(Shortcut shortcut, Context context) {
         try {
-            // Create export directory if it doesn't exist
             File exportDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS), EXPORT_DIR);
             if (!exportDir.exists() && !exportDir.mkdirs()) {
                 Log.e(TAG, "Failed to create export directory");
                 return null;
             }
 
-            // Create the export file
             File exportFile = new File(exportDir, shortcut.name + FILE_EXTENSION);
-            
-            // Create JSON object with shortcut settings
+
             JSONObject configJson = new JSONObject();
-            
-            // Basic shortcut info (removed path as it's specific to original shortcut)
             configJson.put("shortcutName", shortcut.name);
             configJson.put("wmClass", shortcut.wmClass);
             configJson.put("exportVersion", "1.0");
             configJson.put("exportDate", System.currentTimeMillis());
-            
-            // Export all extra data (settings)
+
             JSONObject extraData = new JSONObject();
-            
-            // Get all the shortcut extra settings (excluding path-specific fields)
             String[] settingKeys = {
                 "execArgs", "screenSize", "graphicsDriver", "graphicsDriverConfig",
                 "dxwrapper", "ddrawrapper", "dxwrapperConfig", "audioDriver", "emulator",
@@ -64,25 +75,90 @@ public class ShortcutConfigManager {
                 "startupSelection", "sharpnessEffect", "sharpnessLevel", "sharpnessDenoise",
                 "controlsProfile", "cpuList"
             };
-            
+
             for (String key : settingKeys) {
                 String value = shortcut.getExtra(key);
-                if (!value.isEmpty()) {
+                if (value.isEmpty()) {
+                    switch (key) {
+                        case "graphicsDriverConfig":
+                            value = shortcut.container.getGraphicsDriverConfig();
+                            break;
+                        case "graphicsDriver":
+                            value = shortcut.container.getGraphicsDriver();
+                            break;
+                        case "dxwrapper":
+                            value = shortcut.container.getDXWrapper();
+                            break;
+                        case "ddrawrapper":
+                            value = shortcut.container.getDDrawWrapper();
+                            break;
+                        case "dxwrapperConfig":
+                            value = shortcut.container.getDXWrapperConfig();
+                            break;
+                        case "audioDriver":
+                            value = shortcut.container.getAudioDriver();
+                            break;
+                        case "emulator":
+                            value = shortcut.container.getEmulator();
+                            break;
+                        case "midiSoundFont":
+                            value = shortcut.container.getMIDISoundFont();
+                            break;
+                        case "screenSize":
+                            value = shortcut.container.getScreenSize();
+                            break;
+                        case "wincomponents":
+                            value = shortcut.container.getWinComponents();
+                            break;
+                        case "box64Version":
+                            value = shortcut.container.getBox64Version();
+                            break;
+                        case "fexcoreVersion":
+                            value = shortcut.container.getFEXCoreVersion();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                if (value != null && !value.isEmpty()) {
                     extraData.put(key, value);
                 }
             }
-            
+
+            try {
+                java.util.HashMap<String,String> gdc = com.winlator.xmod.contentdialog.GraphicsDriverConfigDialog.parseGraphicsDriverConfig(extraData.optString("graphicsDriverConfig", ""));
+                if ("1".equals(gdc.get("adrenotoolsTurnip"))) {
+                    String drv = gdc.get("version");
+                    if (drv != null && !drv.isEmpty()) extraData.put("adrenotoolsDriverId", drv);
+                }
+            } catch (Exception ignore) {}
+
+            // Ensure Box64 preset and env vars are exported properly
+            try {
+                String emulator = extraData.optString("emulator", shortcut.container.getEmulator());
+                if ("box64".equalsIgnoreCase(emulator)) {
+                    String presetId = extraData.optString("box64Preset", shortcut.container.getBox64Preset());
+                    if (presetId != null && !presetId.isEmpty()) {
+                        extraData.put("box64Preset", presetId);
+                        if (presetId.startsWith(Box64Preset.CUSTOM)) {
+                            EnvVars baseEnv = new EnvVars(extraData.optString("envVars", shortcut.container.getEnvVars()));
+                            EnvVars presetEnv = Box64PresetManager.getEnvVars("box64", context, presetId);
+                            baseEnv.putAll(presetEnv);
+                            extraData.put("envVars", baseEnv.toString());
+                        }
+                    }
+                }
+            } catch (Exception e) { Log.w(TAG, "Failed to append Box64 preset/env vars", e); }
+
             configJson.put("settings", extraData);
-            
-            // Write to file
+
             try (FileWriter writer = new FileWriter(exportFile)) {
-                writer.write(configJson.toString(4)); // Pretty print with 4 spaces indentation
+                writer.write(configJson.toString(4));
                 writer.flush();
             }
-            
+
             Log.d(TAG, "Shortcut settings exported to: " + exportFile.getAbsolutePath());
             return exportFile;
-            
         } catch (JSONException | IOException e) {
             Log.e(TAG, "Failed to export shortcut settings", e);
             return null;
