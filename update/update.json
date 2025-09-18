@@ -1,0 +1,16 @@
+{
+  "update": {
+    "version": "1.2.0",
+    "changelog": [
+      "Correção de bugs de estabilidade",
+      "Nova interface mais rápida",
+      "Adicionado suporte a múltiplos idiomas",
+      "Melhorias de desempenho em dispositivos antigos"
+    ],
+    "download": {
+      "url": "https://github.com/deivid22srk/Winlator-Xmod/releases/download/Winlatorxmod1.0/app-debug_sign.apk",
+      "size": "85MB",
+      "type": "apk"
+    }
+  }
+}
