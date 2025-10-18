@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Movie Client</string>
+    <string name="movies">Filmes</string>
+    <string name="series">Séries</string>
+    <string name="search">Buscar</string>
+    <string name="settings">Configurações</string>
+</resources>

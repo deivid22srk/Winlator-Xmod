@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Movie Server</string>
+    <string name="server_running">Server Running</string>
+    <string name="server_stopped">Server Stopped</string>
+    <string name="notification_channel_name">Movie Server</string>
+    <string name="notification_channel_description">Movie Server Service</string>
+</resources>
